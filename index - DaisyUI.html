@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
+    <!----><script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+    <title>Откровения людям Нового века</title>
+</head>
+<body>
+
+
+    <!--<div class="drawer drawer-end lg:drawer-open">
+        <input id="my-drawer-right" type="checkbox" class="drawer-toggle" />
+        <div class="drawer-content flex flex-col items-center justify-center"> -->
+
+            <div class="drawer lg:drawer-open">
+                <input id="my-drawer-left" type="checkbox" class="drawer-toggle">
+                <div class="drawer-content">
+
+                    <div class="navbar bg-base-300 w-full">
+                        <div class="flex-none lg:hidden">
+                            <label for="my-drawer-left" aria-label="open sidebar" class="btn btn-square btn-ghost drawer-button">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    class="inline-block h-6 w-6 stroke-current"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M4 6h16M4 12h16M4 18h16"
+                                    ></path>
+                                </svg>
+                            </label>
+                        </div>
+
+                        <div class="mx-2 flex-1 px-2">Откровения</div>
+
+                        <div class="hidden flex-none lg:block">
+                            <ul class="menu menu-horizontal">
+                                <li class="active"><a href="/">ГЛАВНАЯ</a></li>
+                                <li class=""><a href="predislovie.html">ПРЕДИСЛОВИЕ ВСЕВЫШНЕГО</a></li>
+                                <li class=""><a href="otkroveniya.html">ОТКРОВЕНИЯ</a></li>
+                                <li class=""><a href="tolkovaniya.html">ТОЛКОВАНИЯ</a></li>
+                                <li class=""><a href="year.html">НОВЫЕ ТЕКСТЫ</a></li>
+                                <li class=""><a href="poems/year.html">КАТРЕНЫ</a></li>
+                                <li class=""><a href="intforum.html">НОВОСТИ</a></li>
+                                <li class=""><a href="novosti.html">ОБЪЯВЛЕНИЯ</a></li>
+                            </ul>
+                        </div>
+
+                        <div class="navbar-end">
+                            <div class="flex-none">
+                                <label for="my-drawer-right" aria-label="open sidebar" class="btn btn-square btn-ghost drawer-button">
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        class="inline-block h-6 w-6 stroke-current"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M4 6h16M4 12h16M4 18h16"
+                                        ></path>
+                                    </svg>
+                                </label>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Page content here -->
+                    <div id="main-cont">Это контент</div>
+
+                    <footer class="footer sm:footer-horizontal footer-center bg-base-300 text-base-content p-4">
+                      <aside>
+                        <p>Copyright © <a href="mailto:maslovli@yandex.ru">Leonid Maslov</a> 2004-<span id="footerYear"></span><br>При копировании материалов с Сайта <a href="https://otkroveniya.eu" target="_blank">ссылка на Первоисточник</a> обязательна.</p>
+                      </aside>
+                    </footer>
+
+                </div> 
+                <div class="drawer-side">
+                    <label for="my-drawer-left" aria-label="close sidebar" class="drawer-overlay"></label>
+                    <ul class="menu bg-base-200 min-h-full w-80 p-4">
+                        <!-- Sidebar content here -->
+                        <li>Test 8</li>
+                        <li><input type="text" name="Search" id="Search" placeholder="Нажмите Enter..." value="успешный" /></li>
+                    </ul>
+                </div>
+            </div>
+
+        <!--</div>
+        <div class="drawer-side">
+            <label for="my-drawer-right" aria-label="close sidebar" class="drawer-overlay"></label>
+            <ul class="menu bg-base-200 min-h-full w-80 p-4">
+                <li><a>Закладка 1</a></li>
+                <li><a>Закладка 2</a></li>
+            </ul>
+        </div>
+    </div>-->
+
+    <script>
+        window.onload = function() {
+            document.getElementById("footerYear").innerHTML = new Date().getFullYear();
+        }
+    </script>
+</body>
+</html>
