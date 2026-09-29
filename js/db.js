@@ -16,7 +16,7 @@ class DB {
 
 
 		// 'https://cors-anywhere.herokuapp.com/http://otk-data.website.yandexcloud.net'
-		const url = 'data'; // 'https://publish-dt.github.io/otk-data/exp'; // /olnv-js/
+		const url = 'https://publish-dt.github.io/otk-data/exp'; // 'data'; // 
 
 		const serviceDwld = await download(url + '/service.json');
 		const serviceData = await db.settings.get('serviceData');
