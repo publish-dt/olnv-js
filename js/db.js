@@ -16,7 +16,7 @@ class DB {
 
 
 		// 'https://cors-anywhere.herokuapp.com/http://otk-data.website.yandexcloud.net'
-		const url = '/olnv-js/data'; // 'https://publish-dt.github.io/otk-data/exp'; // 
+		const url = 'data'; // 'https://publish-dt.github.io/otk-data/exp'; // /olnv-js/
 
 		const serviceDwld = await download(url + '/service.json');
 		const serviceData = await db.settings.get('serviceData');
@@ -84,7 +84,7 @@ async function fillInfos(serviceDwld, serviceData, url, app, isAwait) {
 									}
 									else { // это новый материал
 										await db.infos.add(obj);
-										if (serviceData.LastDateChange !== undefined) console.log('Новый материал: ' + obj.Link);
+										if (serviceData && serviceData.LastDateChange) console.log('Новый материал: ' + obj.Link);
 										numberNewData++;
 									}
 
@@ -100,7 +100,7 @@ async function fillInfos(serviceDwld, serviceData, url, app, isAwait) {
 
 									counter++;
 								}
-								else if (serviceData.LastDateChange !== undefined && obj.Active === false && dateChange > lastDateChangeStore) {
+								else if (serviceData && serviceData.LastDateChange && obj.Active === false && dateChange > lastDateChangeStore) {
 									//toDelete.push(obj.Id);
 									await db.infos.delete(obj.Id);
 								}
