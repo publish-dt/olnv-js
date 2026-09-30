@@ -4,7 +4,7 @@ class DB {
 
 	constructor(app) {
 		this.app = app;
-		this.router = app.router;
+		//this.router = app.router;
 	}
 
 	async fillDb(isAwait) {
@@ -19,18 +19,28 @@ class DB {
 		const url = 'https://publish-dt.github.io/otk-data/exp'; // 'data'; // 
 
 		const serviceDwld = await download(url + '/service.json');
-		const serviceData = await db.settings.get('serviceData');
-		
-		await fillInfos(serviceDwld, serviceData, url, this.app, isAwait);
-		await fillFiles(serviceDwld, serviceData, url, this.app);
-		await fillQuote(serviceDwld, serviceData, url, this.app);
+		if (serviceDwld) {
+			const serviceData = await db.settings.get('serviceData');
 
+			const res = await fillInfos(serviceDwld, serviceData, url, this.app, isAwait);
+			await fillFiles(serviceDwld, serviceData, url, this.app);
+			await fillQuote(serviceDwld, serviceData, url, this.app);
+
+			if (Object.keys(res).length > 0)
+				alert(`Загружено: ${res.numberNewData} новых материалов и ${res.numberChangeData} изменённых материалов`);
+		}
+		else {
+			if (netOffline) alert('Нет подключения к интернету!');
+			else alert('Не удалось загрузить данные из otk-data');
+		}
 
 		this.app.stateContainer.updateInfo.updateStarted = false;
 	}
 }
 
 async function fillInfos(serviceDwld, serviceData, url, app, isAwait) {
+	const res = {};
+
 	const lastDateChange = new Date(serviceDwld.LastDateChange);
 	const lastDateChangeStore = (serviceData === undefined || serviceData.LastDateChange === undefined ? new Date(0, 0, 0) : new Date(serviceData.LastDateChange));
 	if (serviceData === undefined || lastDateChange > lastDateChangeStore) {
@@ -69,7 +79,7 @@ async function fillInfos(serviceDwld, serviceData, url, app, isAwait) {
 
 								const dateChange = new Date(obj.DateChange);
 								const date = new Date(obj.Date);
-								if (obj.Active === true && (dateChange > lastDateChangeStore || obj.Id === lastPoemStore.Id || obj.Id === lastTolkStore.Id)) { // это новый/изменённый материал или последний Катрен/Послание, это нужно, чтобы старые и не изменённые материалы не пересохранять в БД
+								if (obj.Active === true && (dateChange > lastDateChangeStore || (lastPoemStore && obj.Id === lastPoemStore.Id) || (lastTolkStore && obj.Id === lastTolkStore.Id))) { // это новый/изменённый материал или последний Катрен/Послание, это нужно, чтобы старые и не изменённые материалы не пересохранять в БД
 									let isFound = false;
 									await db.infos.where("Id").equalsIgnoreCase(obj.Id).modify((value, ref) => { // изменяем существующую запись в БД
 										ref.value = obj;
@@ -77,7 +87,7 @@ async function fillInfos(serviceDwld, serviceData, url, app, isAwait) {
 									});
 
 									if (isFound) { // это изменённый материал
-										if (obj.Id !== lastPoemStore.Id && obj.Id !== lastTolkStore.Id) { // Последний Катрен/Послание не должен учитываться в списке изменённых материалов, т.к. в нём меняется только Data.Next
+										if (lastPoemStore && obj.Id !== lastPoemStore.Id && lastTolkStore && obj.Id !== lastTolkStore.Id) { // Последний Катрен/Послание не должен учитываться в списке изменённых материалов, т.к. в нём меняется только Data.Next
 											console.log('Изменённый материал: ' + obj.Link);
 											numberChangeData++;
 										}
@@ -111,7 +121,6 @@ async function fillInfos(serviceDwld, serviceData, url, app, isAwait) {
 						}
 					}
 					console.log(`Загружено ${counter} материалов`);
-					alert(`Загружено: ${numberNewData} новых материалов и ${numberChangeData} изменённых материалов`);
 
 					// кэшируем основные данные последнего Катрена и Послания
 					if (lastPoem) localStorage.setItem('lastPoem', JSON.stringify(lastPoem));
@@ -120,6 +129,8 @@ async function fillInfos(serviceDwld, serviceData, url, app, isAwait) {
 					if (!isAwait) // serviceData === undefined
 						app.router.navigateToPath(app.getPath(location.href));
 
+					res.numberNewData = numberNewData;
+					res.numberChangeData = numberChangeData;
 				}
 			}
 
@@ -135,6 +146,8 @@ async function fillInfos(serviceDwld, serviceData, url, app, isAwait) {
 			console.error(e);
         }
 	}
+
+	return res;
 }
 
 async function fillFiles(serviceDwld, serviceData, url, app) {

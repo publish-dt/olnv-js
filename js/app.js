@@ -1,11 +1,14 @@
 import DB from './db.js';
 import Router from './router.js';
 import StateContainer from './state.js';
+import Search from './search.js';
 
 class App {
 	constructor() {
+		this.appName = 'Откровения людям Нового века';
 		this.router = new Router(this);
 		this.myDB = new DB(this);
+		this.search = new Search(this);
 
 		this.catalogs = {
 			dict: '618028f53fbe9a7a22fa9e82',
@@ -43,6 +46,7 @@ class App {
 
 		window.mainContEl = document.getElementById('main-cont');
 		window.quoteBlockEl = document.getElementById('quote-block');
+		window.formEl = document.getElementById('search');
 
 		// получаем последнюю открытую пользователем страницу
 		let pathChanged = false;
@@ -111,7 +115,6 @@ window.onclick = async function (event) {
 					const state = await app.router.navigateToPath(path);
 					window.mainContEl.scrollIntoView(); //window.scroll(0, 0);
 					if (state) {
-						document.title = state.title;
 						history.pushState(state, '', '/' + app.basePath + (state.path === 'index' ? '' : `${state.path}.html`));
 					}
 				} catch (e) {
@@ -142,3 +145,12 @@ window.addEventListener('popstate', async function (event) {
 	await app.router.navigateToPath(path);
 });
 
+window.addEventListener('submit', function (event) {
+	event.preventDefault();
+
+	const searchString = formEl.querySelector('#searchString').value;
+	const where = formEl.querySelector('#where').value;
+
+	//console.log('Форма отправлена!' + searchString);
+	app.search.Run(searchString, where);
+});

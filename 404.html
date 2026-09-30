@@ -5,13 +5,13 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="version" content="1.0.0-alpha1">
-    <base href="/olnv-js/" /> <!-- olnv-js/ -->
+    <base href="/olnv-js/" /> <!--  -->
     <meta name="description" content="Прямое обращение Высшего Космического Разума (Господа Бога, Отца Абсолюта) к человечеству. Книга, записанная Масловым Леонидом Ивановичем.">
     <meta name="author" content="Маслов Леонид Иванович">
     <!-- Иконка -->
     <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
 
-    <link rel="stylesheet" href="css/lib/bootstrap.min.css" crossorigin="anonymous" integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" />
+    <link rel="stylesheet" href="css/lib/bootstrap.min.css" />
 
     <link rel="stylesheet" type="text/css" href="css/style.css">
 
@@ -83,14 +83,42 @@
         <section id="general" class="page_section">
             <div class="container-fluid">
                 <div class="row">
-                    <!-- ЛЕВАЯ КОЛОНКА: календарь, поиск, регистрация
+                    <!-- ЛЕВАЯ КОЛОНКА: календарь, поиск, регистрация -->
                     <div class="col-lg-3 col-md-3 col-sm-4 col-xs-12 large-monitor-left">
-                        
-                    </div> -->
+                        <div class="razdel"><h2><span id="spinner-search" class="my-indicator"></span>Поиск по Сайту</h2>
+                            <form id="search" action="/">
+                                <div class="txt-blue" id="search">
+                                    <div class="search-group">
+                                        <div class="input-search-group">
+                                            <input id="searchString" class="srch" type="search" title="Можно указывать символ звёздочки (*). Она может располагаться между словами через пробел (в этом случае заменяет любое количество слов или ни одного). Например: 'микро * фрактал'">
+                                        </div>
+                                        <div class="list-search-group">
+                                            <button id="but-search" type="submit" class="btn-search">&gt;&gt;</button>
+                                        </div>
+                                    </div>
+                                    <div class="clear"></div>
+                                    <div>
+                                        <div class="where-search-block">
+                                            <select id="where" class="style-select where-search">
+                                                <option value="Mess">в Посланиях</option>
+                                                <option value="Poems">в Катренах</option>
+                                                <option value="Titles">в заголовках</option>
+                                                <option value="Site">по всему Сайту</option>
+                                                <option value="Date">по дате</option>
+                                                <option value="Quote">в цитатах</option>
+                                            </select>
+                                        </div>
+                                        <div class="find txt-blue">искать</div>
+                                    </div>
+                                </div>
+                            </form>
+                            <div class="clear"></div>
+                        </div>                        
+                    </div>
 
                     <!--Центральная часть -->
                     <main>
-                        <div id="main-cont" class="col-lg-12 col-md-12 col-sm-12 col-xs-12 page-main large-monitor-center">
+                        <div id="main-cont" class="col-lg-9 col-md-9 col-sm-8 col-xs-12 page-main large-monitor-center">
                             <p>Загрузка данных...</p>
                         </div>
                     </main><!--/центральная часть-->
@@ -117,8 +145,8 @@
     <script src="js/lib/jszip.min.js"></script>
     <script src="js/lib/dexie.min.js"></script>
     
-    <script src="js/lib/jquery-2.1.4.min.js" integrity="sha256-8WqyJLuWKRBVhxXIL1jBDD7SDxU936oZkCnxQbWwJVw=" crossorigin="anonymous"></script>
-    <script src="js/lib/bootstrap.min.js" crossorigin="anonymous" integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd"></script>
+    <script src="js/lib/jquery-2.1.4.min.js"></script>
+    <script src="js/lib/bootstrap.min.js"></script>
 
     <script src="js/global.js"></script>
     <script type="module" src="js/app.js"></script>

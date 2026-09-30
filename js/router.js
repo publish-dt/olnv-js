@@ -12,6 +12,7 @@ class Router {
         let isNext = false;
         let posNext = -1;
         let state = {};
+        let documentTitle = undefined;
 
         if (path !== '') {
             //let regexp = new RegExp(path);
@@ -62,7 +63,7 @@ class Router {
                     const infoDict = lastTolkStore ? lastTolkStore :
                     await db.infos
                         .orderBy('Date')
-                        .filter((info) => info.Catalog === '55d6a586b6b9a45a700f9eee')
+                            .filter((info) => info.Catalog === this.app.catalogs.tolk)
                         /*.where('Catalog')
                         .equalsIgnoreCase('55d6a586b6b9a45a700f9eee')*/
                         //.limit(1)
@@ -82,7 +83,7 @@ class Router {
                     const infoPoems = lastPoemStore ? lastPoemStore :
                     await db.infos
                         .orderBy('Date')
-                        .filter((info) => info.Catalog === '570ef2fcd07cda3e16f93ef7')
+                            .filter((info) => info.Catalog === this.app.catalogs.poems)
                         /*.where('Catalog')
                         .equalsIgnoreCase('570ef2fcd07cda3e16f93ef7')
                         .desc()
@@ -167,8 +168,8 @@ class Router {
                     const res = await this.renderView(path, infos, cnt, prePage, lastDict, lastPoem, route);
                     cnt = res.cnt;
                     state.title = res.title;
+                    documentTitle = res.title;
                 }
-
             }
         }
 
@@ -202,6 +203,9 @@ class Router {
                 <p id="signature" class="poslan-link">(<a href="/${quote.Link}.html">Послание от ${quote.Link.substring(quote.Link.indexOf('/')+1)}</a>, стих ${quote.Para})</p>
                 `;
             }
+
+            if (documentTitle && path !== 'index') document.title = documentTitle;
+            else document.title = this.app.appName;
         }
 
         state.path = path;
@@ -230,19 +234,9 @@ class Router {
                         const blob = await cachedResponse.blob();
                         const base64 = await blobToBase64(blob);
 
-                        cnt += `<a href="/cnt/${info.Id}/${file.Path}" target="_blank">
+                        cnt += `<a href="cnt/${info.Id}/${file.Path}" target="_blank">
                                     <img src="${base64}" height="120" alt="Изображение" />
                                 </a>`;
-                        /*let reader = new FileReader();
-                        reader.readAsDataURL(blob);
-
-                        reader.onload = function () {
-                            base64 = reader.result;
-                            //  src="/cnt/${info.Id}/${file.Path}" onLoad="handleImgLoad(this)"
-                            cnt += `<a href="/cnt/${info.Id}/${file.Path}" target="_blank">
-                                        <img src="${base64}" height="120" alt="Изображение" />
-                                    </a>`;
-                        };*/
                     }
                 }
             }
