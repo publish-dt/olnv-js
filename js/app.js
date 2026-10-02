@@ -17,6 +17,13 @@ class App {
 			notices: '5eeb5170ee6d7619745b6675',
 			infos: "569d8556d07cda0a2b222693"
 		};
+		this.catalogsName = {
+			[this.catalogs.dict]: 'Диктовки',
+			[this.catalogs.tolk]: 'Послания',
+			[this.catalogs.poems]: 'Катрены',
+			[this.catalogs.notices]: 'Объявления',
+			[this.catalogs.infos]: 'Информация',
+		};
 		this.catalogsIsNext = [ // список ID каталогов, по которым можно перемещаться вперёд/назад
 			this.catalogs.dict,
 			this.catalogs.tolk,
