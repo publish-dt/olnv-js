@@ -62,9 +62,9 @@ class Views {
             </div>`;
 
 
-        const cnt = renderPagination + this.renderFooter(undefined, postfixSeries, prePage, nextPage);
+        const cnt = renderPagination;
 
-        return cnt;
+        return { cnt: cnt, prePage: prePage, nextPage: nextPage };
 	}
 
     renderFooter(info, postfixSeries, prePage, nextPage) {
@@ -89,7 +89,7 @@ class Views {
             cnt += `<img src="/img/star.gif" height="15" hspace="10" width="15">
                 <a href="/${linkNext}${postfixSeries}" class="blue-link-pagination">Следующая</a>`;
             if (info && !info.Data.Next) {
-                cnt += '<span title="Следующей страницы ещё может не быть"> [*]</span>';
+                cnt += '<span id="label-next" title="Следующей страницы ещё может не быть"> [*]</span><span id="spinner-next" class="bi-spinner"></span>';
             }
         }
 

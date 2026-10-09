@@ -64,3 +64,9 @@ function intToRoman(num) {
 function anyToMoscow(date) {
     return new Date(date);
 }
+
+function sleep(ms) {
+    return new Promise(resolve => {
+        setTimeout(resolve, ms);
+    });
+}

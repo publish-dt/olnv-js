@@ -131,7 +131,15 @@ window.onclick = async function (event) {
 			let path = app.getPath(url);
             if (path !== '#') {
 				if (path.endsWith('-next')) {
+					const labelNextEl = document.getElementById('label-next');
+					labelNextEl.style.display = 'none';
+					const spinnerNextEl = document.getElementById('spinner-next');
+					spinnerNextEl.style.display = 'inline-block';
+
 					await app.myDB.fillDb(true);
+
+					labelNextEl.style.display = 'inline-block';
+					spinnerNextEl.style.display = 'none';
 				}
 				try {
 					const state = await app.router.navigateToPath(path, false, targetEl);

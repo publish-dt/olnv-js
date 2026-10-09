@@ -8,6 +8,7 @@ class DB {
 	}
 
 	async fillDb(isAwait) {
+		
 		if (this.app.stateContainer.updateInfo.updateStarted)
 			return;
 		this.app.stateContainer.updateInfo = {
@@ -26,7 +27,7 @@ class DB {
 			await fillFiles(serviceDwld, serviceData, url, this.app);
 			await fillQuote(serviceDwld, serviceData, url, this.app);
 
-			if (Object.keys(res).length > 0 && (res.numberNewData > 0 || res.numberChangeData > 0))
+			if (!isAwait && Object.keys(res).length > 0 && (res.numberNewData > 0 || res.numberChangeData > 0))
 				alert(`Загружено: ${res.numberNewData} новых материалов и ${res.numberChangeData} изменённых материалов`);
 		}
 		else {

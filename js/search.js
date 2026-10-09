@@ -8,6 +8,10 @@ class Search {
 	}
 
     async renderSearch(query) {
+
+        const spinnerEl = document.getElementById('spinner-search');
+        spinnerEl.style.display = 'inline-block';
+
         const queryParams = {};
         const queryArr = query.substring(query.indexOf('?') + 1).split('&');
         for (const key in queryArr) {
@@ -82,6 +86,7 @@ class Search {
         searchData.searchString = searchString;
         searchData.pageIndex = queryParams['PageIndex'] ? queryParams['PageIndex'] : 1;
         searchData.widthCASE = false;
+        searchData.inParagraph = false;
         searchData.patternHightlight = '';
         searchData.sectionHightlight = '';
 
@@ -133,16 +138,17 @@ class Search {
             console.log(`Поиск по фразе '${searchString}' окончен! Найдено ${infos.length} материалов. Заняло: ${endTime - startTime}`);
         }
 
+
         const dataView = this.prepareDataView(infos, searchData);
         const res = await this.renderView(dataView, advError, queryParams);
 
-        //this.app.stateContainer.modelSearch = searchData;
+        spinnerEl.style.display = 'none';
 
         return res;
     }
 
     prepareDataView(infos, searchData) {
-        const patternHightlight = searchData.searchString;// (searchData.InParagraph ? searchData.searchString : searchData.patternHightlight) || "";
+        const patternHightlight = (searchData.inParagraph ? searchData.searchString : searchData.patternHightlight) || "";
 
         const skip = (searchData.pageIndex - 1) * this.m_PageSize;
         const limit = this.m_PageSize;
@@ -246,12 +252,16 @@ class Search {
                 }
             }
 
-            cnt += countPaginPages > 1 ?
-                `<!-- Пагинация -->
-                    <div id='pagin-search' class='search-pagin-blok'>
-                    ${this.app.views.renderPagination(queryParams, 'search', '', Number(queryParams['PageIndex']), 1, countPaginPages, 10, "Страницы результатов: ", '', '', false, 'search')}
-                    </div><!--/search-pagin-blok-->`
-                : '';
+            let res;
+            if (countPaginPages > 1) {
+                res = this.app.views.renderPagination(queryParams, 'search', '', Number(queryParams['PageIndex']), 1, countPaginPages, 10, "Страницы результатов: ", '', '', false, 'search');
+                cnt += `<!-- Пагинация -->
+                        <div id='pagin-search' class='search-pagin-blok'>
+                        ${res.cnt}
+                        </div><!--/search-pagin-blok-->`;
+            }
+
+            cnt += this.app.views.renderFooter(undefined, '', res ? res.prePage : '', res ? res.nextPage : '');
         }
 
         res.title = title;
