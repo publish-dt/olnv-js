@@ -5,5 +5,7 @@ class StateContainer {
         this.updateInfo = {
             updateStarted: false
         };
+
+        this.modelSearch = {};
     }
 }

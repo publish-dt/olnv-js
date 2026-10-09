@@ -2,6 +2,7 @@ import DB from './db.js';
 import Router from './router.js';
 import StateContainer from './state.js';
 import Search from './search.js';
+import Views from './views.js';
 
 class App {
 	constructor() {
@@ -9,6 +10,7 @@ class App {
 		this.router = new Router(this);
 		this.myDB = new DB(this);
 		this.search = new Search(this);
+		this.views = new Views(this);
 
 		this.catalogs = {
 			dict: '618028f53fbe9a7a22fa9e82',
@@ -66,8 +68,8 @@ class App {
 				pathChanged = true;
 			}
 		}*/
-		const state = await this.router.navigateToPath(path);
-		if (pathChanged && state.path !== 'index') history.pushState(state, '', `/${state.path}.html`);
+		const state = await this.router.navigateToPath(path, true);
+		//if (pathChanged) this.setHistory(state);
 	}
 
 	getPath(url, isBase) {
@@ -83,6 +85,13 @@ class App {
         }
 
 		return path;
+	}
+
+
+	setHistory(state) {
+		if (state) { //  && state.path !== 'index' с этим, при переходе на главную, не меняет адресную строку
+			history.pushState(state, '', '/' + app.basePath + (state.path === 'index' ? '' : `${state.path}${!state.path.startsWith('search?') ? '.html' : ''}${state.hash ? '#' + state.hash : ''}`));
+		}
 	}
 }
 
@@ -106,7 +115,13 @@ const app = new App();
 app.init();
 
 window.onclick = async function (event) {
-	const url = event.target.href;
+	let targetEl = event.target;
+	let url = event.target.href;
+	// элемент, по которому кликнули может не являться ссылкой
+	if (!url && event.target.parentElement.href) {
+		url = event.target.parentElement.href;
+		targetEl = event.target.parentElement;
+	}
 
 	if (url !== undefined) {
 		const arrPath = url.split('/');
@@ -119,11 +134,9 @@ window.onclick = async function (event) {
 					await app.myDB.fillDb(true);
 				}
 				try {
-					const state = await app.router.navigateToPath(path);
-					window.mainContEl.scrollIntoView(); //window.scroll(0, 0);
-					if (state) {
-						history.pushState(state, '', '/' + app.basePath + (state.path === 'index' ? '' : `${state.path}.html`));
-					}
+					const state = await app.router.navigateToPath(path, false, targetEl);
+					//window.mainContEl.scrollIntoView(); //window.scroll(0, 0);
+					//this.setHistory(state);
 				} catch (e) {
 					console.error(e);
 				}
@@ -152,12 +165,14 @@ window.addEventListener('popstate', async function (event) {
 	await app.router.navigateToPath(path);
 });
 
-window.addEventListener('submit', function (event) {
+window.onsubmit = async function (event) {
 	event.preventDefault();
 
 	const searchString = formEl.querySelector('#searchString').value;
 	const where = formEl.querySelector('#where').value;
 
 	//console.log('Форма отправлена!' + searchString);
-	app.search.Run(searchString, where);
-});
+	const state = await app.router.navigateToPath(`search?SearchString=${searchString}&Where=${where}`);
+
+	//app.setHistory(state);
+};

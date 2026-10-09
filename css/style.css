@@ -950,24 +950,28 @@ DIV.hr {
     margin: 7pt 0px 12pt;
     border-top: 1px dashed #AAA;
 }
-#res P {
+#msg-search p {
+	text-indent: 0px;
+}
+.search-res-el p {
 	line-height: 1.1;
 	color: #FFFFFF; /*#E8E8E8;*/
 	text-indent: 0px;
 	margin: 4pt 2pt 10pt;
 }
-#res P.poem {
+#res p.poem {
     margin-bottom: 10pt;
 }
-#res P STRONG{
+#res p STRONG{
     font-weight: 400 !important; 
     color: #CEF;
 }
-#res P b{
+#res p b{
     font-weight: 400 !important; 
 }
 
-#res A:link {
+/*#res a:link {*/
+.search-res-el a {
     color: #9CF;
     text-decoration: none;
 }

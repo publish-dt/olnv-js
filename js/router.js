@@ -5,7 +5,7 @@ class Router {
         this.app = app;
     }
 
-    async navigateToPath(path) {
+    async navigateToPath(path, firstLoad, targetEl) {
 
         let count = 0;
         let cnt = '';
@@ -13,13 +13,22 @@ class Router {
         let posNext = -1;
         let state = {};
         let documentTitle = undefined;
+        let hash = '';
+        let modelSearch;
+
+        const newTab = targetEl ? targetEl.target === '_blank' : false;
 
         if (path !== '') {
-            //let regexp = new RegExp(path);
             let prePage = '';
             let lastDict = '';
             let lastPoem = '';
 
+            // получаем значение хэша/якоря
+            const arrPath = path.split('#');
+            if (arrPath.length > 1) hash = arrPath[1];
+            path = arrPath[0];
+
+            // получаем настройки роутинга
             let route = { ByLink: true };
             for (var k in this.app.routes) {
                 if (this.app.routes[k].Route.includes(path)) {
@@ -29,24 +38,21 @@ class Router {
             }
 
             if (path.startsWith('cnt/')) {
-                //const cache = await caches.open("cnt");
-
-                /*caches.match('/cnt/6488a42d9231157cf9aaf9f1/Image00001.jpg').then(response => {
-                    if (response) {
-                        // Use the cached response
-                    } else {
-                        // Fetch from network
-                    }
-                });*/
                 const cachedResponse = await cache.match('/' + path);
                 if (cachedResponse) {
                     const blob = await cachedResponse.blob();
                     const base64 = await blobToBase64(blob);
 
-                    document.body.innerHTML = `<img src="${base64}" style="display: block;-webkit-user-select: none;margin: auto;background-color: hsl(0, 0%, 90%);transition: background-color 300ms;">`;
-                    /*var newTab = window.open();
-                    newTab.document.body.innerHTML = `<img src="${base64}">`;*/
+                    const imgCnt = `<img src="${base64}" style="display: block;-webkit-user-select: none;margin: auto;background-color: hsl(0, 0%, 90%);transition: background-color 300ms;">`;
+                    if (newTab) cnt = imgCnt;
+                    else document.body.innerHTML = imgCnt;
                 }
+            }
+            // Это страница поиска
+            else if (path.startsWith('search?')) {
+                const res = await this.app.search.renderSearch(path);
+                cnt = res.cnt;
+                documentTitle = res.title;
             }
             else {
 
@@ -165,7 +171,12 @@ class Router {
 
                     const infos = !route.ByLink ? await coll.desc().sortBy('Date') : await coll.toArray();
 
-                    const res = await this.renderView(path, infos, cnt, prePage, lastDict, lastPoem, route);
+                    if (location.pathname.endsWith('search')) {
+                        if (targetEl.dataset.msuPagesearch && (new Boolean(targetEl.dataset.msuPagesearch))) modelSearch = this.app.stateContainer.modelSearch;
+                        else this.app.stateContainer.modelSearch = {};
+                    }
+
+                    const res = await this.renderView(path, infos, cnt, prePage, lastDict, lastPoem, route, modelSearch);
                     cnt = res.cnt;
                     state.title = res.title;
                     documentTitle = res.title;
@@ -183,37 +194,125 @@ class Router {
         else cntIsSet = true;
 
         if (cntIsSet) {
-            mainContEl.innerHTML = cnt;
+            if (documentTitle && path !== 'index') documentTitle = documentTitle;
+            else documentTitle = this.app.appName;
 
-            if (path !== 'index') {
-                let bookmarks = await dbApp.settings.get('bookmarks');
-                if (!bookmarks) bookmarks = {};
-                bookmarks['#lastPage#'] = path;
-                //bookmarks[state.title] = path;
-                dbApp.settings.upsert('bookmarks', bookmarks);
+            if (newTab) {
+                /*var divEl = document.createElement('div');
+                divEl.innerHTML = cnt;
+                var newTab = window.open('', documentTitle); // , features
+                newTab.document.body.appendChild(divEl);*/
+                var newWindow = window.open('', documentTitle);
+
+                if (newWindow) {
+                    // Наполняем новую вкладку содержимым
+                    newWindow.document.write(`
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="css/lib/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+    <title>${documentTitle}</title>
+</head>
+<body>
+    <div id="page" class="page">
+        <section id="general" class="page_section">
+            <div class="container-fluid">
+                <div class="row">
+                    <main>
+                        <div id="main-cont" class="col-lg-12 col-md-12 col-sm-12 col-xs-12 page-main">
+                            ${cnt}
+                        </div>
+                    </main>
+                </div>
+            </div>
+        </section>
+    </div>
+    <script>
+        window.onload = function () {
+            window.mainContEl = document.getElementById('main-cont');
+
+            const hash = '${hash}';
+            if (hash) {
+                const hashEl = document.getElementsByName(hash);
+                if (hashEl.length > 0) hashEl[0].scrollIntoView();
             }
 
-            // выводим цитату
-            const max = settings && settings.LastNumberQuote ? settings.LastNumberQuote : 0;
-            if (max) {
-                const quote = await db.quote.get(getRandomInt(max));
-                quoteBlockEl.innerHTML = `
-                <p>Слова Создателя:</p>
-                <p class="poslan-quote">${quote.Description}</p>
-                <p id="signature" class="poslan-link">(<a href="/${quote.Link}.html">Послание от ${quote.Link.substring(quote.Link.indexOf('/')+1)}</a>, стих ${quote.Para})</p>
-                `;
-            }
+            //console.log('test 1');
+            //debugger;
+            const path = '/' + '${this.app.basePath + (path === 'index' ? '' : (path + (!path.startsWith('search?') ? '.html' : ''))) + (hash ? '#' + hash : '')}';
+            //alert(path);
+            history.pushState({}, '', path);
+        };
+    <\/script>
+</body>
+</html>
+                    `);
 
-            if (documentTitle && path !== 'index') document.title = documentTitle;
-            else document.title = this.app.appName;
+                    // Закрываем поток записи документа
+                    newWindow.document.close();
+
+                    // Помечаем заголовок элемента в результате поиска, как просмотренный
+                    if (modelSearch && Object.keys(modelSearch).length > 0) {
+                        let titleEl = targetEl;
+                        if (targetEl.firstChild.nodeName !== "#text") titleEl = targetEl.firstChild;
+                        titleEl.setAttribute('style', 'color: peru !important;');
+                        const value = path + (hash ? `#${hash}` : '');
+                        if (Array.isArray(modelSearch.viewedList)) {
+                            if (!modelSearch.viewedList.includes(value)) modelSearch.viewedList.push(value);
+                        }
+                        else modelSearch.viewedList = [value];
+                    }
+                }
+            }
+            else {
+                mainContEl.innerHTML = cnt;
+
+                if (path !== 'index' && !path.startsWith('search?')) {
+                    let bookmarks = await dbApp.settings.get('bookmarks');
+                    if (!bookmarks) bookmarks = {};
+                    bookmarks['#lastPage#'] = path;
+                    //bookmarks[state.title] = path;
+                    dbApp.settings.upsert('bookmarks', bookmarks);
+                }
+
+                // выводим цитату
+                const max = settings && settings.LastNumberQuote ? settings.LastNumberQuote : 0;
+                if (max) {
+                    const quote = await db.quote.get(getRandomInt(max));
+                    quoteBlockEl.innerHTML = `
+                    <p>Слова Создателя:</p>
+                    <p class="poslan-quote">${quote.Description}</p>
+                    <p id="signature" class="poslan-link">(<a href="/${quote.Link}.html">Послание от ${quote.Link.substring(quote.Link.indexOf('/') + 1)}</a>, стих ${quote.Para})</p>
+                    `;
+                }
+
+                /*if (documentTitle && path !== 'index') document.title = documentTitle;
+                else document.title = this.app.appName;*/
+                document.title = documentTitle;
+            }
         }
 
         state.path = path;
+        state.hash = hash;
 
-        return posNext !== -1 && !isNext ? undefined : state;
+        if (hash) {
+            let hashEl = document.getElementsByName(hash);
+            if (hashEl.length > 0) hashEl[0].scrollIntoView();
+            //window.location.hash = hash;
+        }
+        else if (!firstLoad && !newTab)
+            window.mainContEl.scrollIntoView(); //window.scroll(0, 0);
+
+        state = posNext !== -1 && !isNext ? undefined : state;
+        if (!newTab) this.app.setHistory(state);
+
+        return state;
     }
 
-    async renderContent(info, lastDict, lastPoem) {
+    async renderContent(info, lastDict, lastPoem, modelSearch) {
         let cnt = undefined;
         let desc = info.Description;
 
@@ -221,7 +320,15 @@ class Router {
             desc = desc.replace('{{$lastdict}}', lastDict).replace('{{$lastpoem}}', lastPoem);
         }
 
+        // подсвечиваем найденную фразу
+        if (modelSearch && Object.keys(modelSearch).length > 0) {
+            const searchOptions = "g" + (modelSearch.widthCASE ? '' : 'i');
+            desc = desc.replace(RegExp(modelSearch.patternHightlight, searchOptions), "<span class='hightlight'>" + modelSearch.sectionHightlight + "</span>");
+        }
+
         cnt = `<div class="razdel poem-blok">${desc}</div>`;
+
+        // Галлерея
         if (info.Files && info.Files.length > 0) {
             cnt += '<!--gallery block-->';
             for (var i in info.Files) {
@@ -234,9 +341,11 @@ class Router {
                         const blob = await cachedResponse.blob();
                         const base64 = await blobToBase64(blob);
 
-                        cnt += `<a href="cnt/${info.Id}/${file.Path}" target="_blank">
+                        cnt += `
+                                <a href="cnt/${info.Id}/${file.Path}" target="_blank">
                                     <img src="${base64}" height="120" alt="Изображение" />
-                                </a>`;
+                                </a>
+                                `;
                     }
                 }
             }
@@ -250,7 +359,7 @@ class Router {
     }
 
 
-    async renderView(path, infos, cnt, prePage, lastDict, lastPoem, route) {
+    async renderView(path, infos, cnt, prePage, lastDict, lastPoem, route, modelSearch) {
         let listDouble = [];
         const info = infos[0];
         const res = {};
@@ -264,7 +373,7 @@ class Router {
             for (var j in infos) {
                 const info = infos[j];
 
-                cnt += await this.renderContent(info, lastDict, lastPoem);
+                cnt += await this.renderContent(info, lastDict, lastPoem, modelSearch);
 
                 if (route.ByLink) break;
                 else listDouble.push(path);
@@ -272,28 +381,7 @@ class Router {
 
             if (info.Link !== 'index') {
 
-                cnt += '<div class="page-footer">';
-
-                if (prePage && this.app.catalogsIsNext.includes(info.Catalog)) {
-                    cnt += `<a href="/${prePage}.html" class="blue-link-pagination">Предыдущая</a>
-                    <img src="/img/star.gif" height="15" hspace="10" width="15">`
-                }
-
-                cnt += `<button onclick="window.mainContEl.scrollIntoView();" class="btn-link blue-link-pagination">В начало страницы</button>`;
-
-                if (this.app.catalogsIsNext.includes(info.Catalog)) {
-                    let linkNext = info.Data.Next;
-                    if (!info.Data.Next) {
-                        linkNext = info.Link + '-next';
-                    }
-                    cnt += `<img src="/img/star.gif" height="15" hspace="10" width="15">
-                    <a href="/${linkNext}.html" class="blue-link-pagination">Следующая</a>`;
-                    if (!info.Data.Next) {
-                        cnt += '<span title="Следующей страницы ещё может не быть"> [*]</span>';
-                    }
-                }
-
-                cnt += '</div>';
+                cnt += this.app.views.renderFooter(info, '.html', prePage);
 
             }
             else

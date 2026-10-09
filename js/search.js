@@ -3,10 +3,28 @@ export { Search as default };
 class Search {
 
 	constructor(app) {
-		this.app = app;
+        this.app = app;
+        this.m_PageSize = 15;
 	}
 
-    async Run(searchString, where) {
+    async renderSearch(query) {
+        const queryParams = {};
+        const queryArr = query.substring(query.indexOf('?') + 1).split('&');
+        for (const key in queryArr) {
+            const data = queryArr[key].split('=');
+            queryParams[data[0]] = data[1];
+            /*if (queryArr[key].startsWith('SearchString=')) {
+                queryParams['SearchString'] = queryArr[key].split('=')[1];
+            }
+            else if (queryArr[key].startsWith('Where=')) {
+                queryParams['Where'] = queryArr[key].split('=')[1];
+            }*/
+        }
+        let searchString = queryParams['SearchString'];
+        const where = queryParams['Where'];
+
+        searchString = decodeURIComponent(searchString);
+        if (!searchString || !where) return;
         console.log(`Начат поиск по фразе '${searchString}'`);
 
         let advError = undefined;
@@ -58,10 +76,34 @@ class Search {
                 break;
             default:
         }
-        const modelSearch = { where: where, searchString: searchString, widthCASE: false };
-        const i = 0;
-        modelSearch.patternHightlight = (!modelSearch.patternHightlight ? "(" : "|(") + searchString/*arrSearchString[i]*/ + ")";
-        modelSearch.sectionHightlight = "$" + (i + 1);
+
+        const searchData = this.app.stateContainer.modelSearch;// { where: where, searchString: searchString, pageIndex: queryParams['PageIndex'] ? queryParams['PageIndex'] : 1, widthCASE: false };
+        searchData.where = where;
+        searchData.searchString = searchString;
+        searchData.pageIndex = queryParams['PageIndex'] ? queryParams['PageIndex'] : 1;
+        searchData.widthCASE = false;
+        searchData.patternHightlight = '';
+        searchData.sectionHightlight = '';
+
+        // обрабатываем * в поисковой фразе
+        var startWord = /*modelSearch.StartEndWord == 1 || modelSearch.StartEndWord == 2 ? "\\b" :*/ "";
+        var endWord = /*modelSearch.StartEndWord == 1 ? "\\b" :*/ "";
+
+        var arrSearchString = searchString.split(" * ");
+        for (let i = 0; i < arrSearchString.length; i++)
+        {
+            if (arrSearchString[i]) {
+                var matchTrimed = arrSearchString[i].match(/(\w+\W*)+\b/); // обрезаем вначале и в конце фразы все символы пунктуации
+                if (matchTrimed) arrSearchString[i] = matchTrimed[0].replace(/[^\w*]/, "\W") // внутри фразы заменяем все символы (кроме *) пунктуации на регулярное выражение \W
+                    .replace("*", "\w*"); // это для поиска слов (внутри фразы) с произвольным окончанием
+
+                arrSearchString[i] = startWord + arrSearchString[i] + endWord;
+
+                searchData.patternHightlight += (searchData.patternHightlight ? "|(" : "(") + arrSearchString[i] + ")";
+                searchData.sectionHightlight += "$" + (i + 1);
+            }
+        }
+        searchString = arrSearchString.join(".*");
 
         let infos = [];
         if (!advError) {
@@ -91,30 +133,56 @@ class Search {
             console.log(`Поиск по фразе '${searchString}' окончен! Найдено ${infos.length} материалов. Заняло: ${endTime - startTime}`);
         }
 
-        const elementsView = this.prepareElementsView(infos, modelSearch);
-        const res = await this.renderView(elementsView, modelSearch, advError);
-        document.title = res.title;
-        mainContEl.innerHTML = res.cnt;/**/
+        const dataView = this.prepareDataView(infos, searchData);
+        const res = await this.renderView(dataView, advError, queryParams);
 
-        return;
+        //this.app.stateContainer.modelSearch = searchData;
+
+        return res;
     }
 
-    async renderView(infos, modelSearch, advError) {
+    prepareDataView(infos, searchData) {
+        const patternHightlight = searchData.searchString;// (searchData.InParagraph ? searchData.searchString : searchData.patternHightlight) || "";
+
+        const skip = (searchData.pageIndex - 1) * this.m_PageSize;
+        const limit = this.m_PageSize;
+
+        const dataView = searchData;
+        dataView.itemCount = infos.length;
+        dataView.elementsView = [];
+
+        if (skip === 0) infos.length = limit;
+        else infos = infos.slice(skip, skip+limit); // infos.length
+
+        /*infos.each(_info => {
+        });*/
+        for (var i in infos) {
+            const _info = infos[i];
+
+            dataView.elementsView.push(this.renderContent(_info, searchData, patternHightlight));
+        }
+
+        return dataView;
+    }
+
+    async renderView(dataView, advError, queryParams) {
         const title = 'Результаты поиска';
         const res = {};
+        const elementsView = dataView.elementsView;
+        //const modelSearch = this.app.stateContainer.modelSearch;
 
-        const itemCount = infos.length;
-        let whereText = await this.getHeaderTextParams(modelSearch.where, itemCount);
+        const itemCount = dataView.itemCount;
+        let whereText = await this.getHeaderTextParams(dataView.where, itemCount);
 
         let cnt = `<h1 id='pageTitle' class='page-title'>${title}</h1>
             <div id='res'>
             <div id='msg-search'>
             <p>
-            <span>Вы искали ${whereText[0]} ${(modelSearch.where !== 'Date' ? "фрагмент " : "")}“<strong>${modelSearch.searchString}</strong>”.</span><br />`;
+            <span>Вы искали ${whereText[0]} ${(dataView.where !== 'Date' ? "фрагмент " : "")}“<strong>${dataView.searchString}</strong>”.</span><br />`;
 
         cnt += itemCount > 0 ?
-            (modelSearch.where !== 'Date' ?
-                `<span>Поиск выполнен без учёта знаков препинания${(modelSearch.widthCASE ? "" : " и регистра букв")}.</span>
+            (dataView.where !== 'Date' ?
+                `<span>Поиск выполнен без учёта знаков препинания${(dataView.widthCASE ? "" : " и регистра букв")}.</span>
                 <br />
                 <span>Найдены соответствия ${whereText[1]} </span>
                 `
@@ -122,9 +190,9 @@ class Search {
             )
             + `<strong>${itemCount}</strong> ${whereText[2]}.<br />`
             : (!advError ?
-                `К сожалению, ничего не найдено.<br /><br />${((modelSearch.searchString.includes("*")) ? "Символ звёздочки (*) можно использовать только между словами через пробел (в этом случае заменяет любое количество слов или ни одного). Например: 'микро * фрактал'<br /><br />" : "")}`
+                `К сожалению, ничего не найдено.<br /><br />${((dataView.searchString.includes("*")) ? "Символ звёздочки (*) можно использовать только между словами через пробел (в этом случае заменяет любое количество слов или ни одного). Например: 'микро * фрактал'<br /><br />" : "")}`
 
-                + (modelSearch.where != 'Date' ? `
+                + (dataView.where != 'Date' ? `
                 Возможно, вы ошиблись в написании одного из слов. Если вы не помните точно, как пишется слово, введите ту его часть, в написании которой вы уверены.
                 <br />
                 Действующая версия поискового модуля выполняет так называемый контекстный поиск, то есть поиск в точном соответствии с указанным порядком и окончаниями слов.
@@ -136,18 +204,22 @@ class Search {
 
         cnt += '</p></div>'
 
+        const countPaginPages = Math.ceil(itemCount / this.m_PageSize);
+
         if (itemCount > 0) {
             cnt += "<div id='res-search' class='search-res-blok'>";
-            for (var i in infos) {
-                const info = infos[i];
-
+            for (var i in elementsView) {
+                const info = elementsView[i];
+                //console.log('Найдено: ' + (info.Titles ? info.Titles[0] : info.Link));
                 if (info) {
-                    console.log('Найдено: ' + info.Name);
 
-                    cnt += `<div class=""search-res-el"">
+                    cnt += `<div class="search-res-el">
                             <div>
-                                <a target='_blank' href='/${(!info.Link ? (info.Catalog === this.app.catalogs.notices ? "novosti.html" : "") : info.Link + ".html")}'>
-                                    ${(modelSearch.where === 'Quote' ? "Послание от " : "") + info.Name.replace("<br>", "").replace("<br />", "")}
+                                <a target='_blank' href='${(!info.Link ? (info.Catalog === this.app.catalogs.notices ? "novosti.html" : "") : info.Link + ".html")}'
+                                ${dataView && dataView.viewedList && dataView.viewedList.includes(info.Link) ? " style='color: peru!important;'" : "" }
+                                data-msu-pagesearch='true'
+                                >
+                                    ${(dataView.where === 'Quote' ? "Послание от " : "") + info.Name.replace("<br>", "").replace("<br />", "")}
                                 </a>`;
                                 cnt += ((info.Catalog == this.app.catalogs.poems || info.Catalog == this.app.catalogs.dict || info.Catalog == this.app.catalogs.tolk) ?
                                     `<span> (
@@ -155,7 +227,7 @@ class Search {
                                         ${ (info.Catalog == this.app.catalogs.dict || info.Catalog == this.app.catalogs.tolk ? ", книга " + intToRoman(((new Date(info.Date)).getFullYear() - 2000 - 3)) : "")}
                                     )</span>`
                                 : (
-                                    modelSearch.where !== 'Quote' ?
+                                    dataView.where !== 'Quote' ?
                                         `<span> (
                                             ${(info.Catalog == this.app.catalogs.notices ? "Объявление от "
                                             : (info.Catalog == this.app.catalogs.infos ? ""
@@ -166,7 +238,7 @@ class Search {
                                     )
                                 );
                     cnt += `</div>
-                            ${(modelSearch.where !== 'Date' && info.Description ?
+                            ${(dataView.where !== 'Date' && info.Description ?
                                 "<div>"+info.Description+"</div>" : ""
                             )}
                         </div>
@@ -174,31 +246,18 @@ class Search {
                 }
             }
 
-            cnt += `<!-- Пагинация -->
+            cnt += countPaginPages > 1 ?
+                `<!-- Пагинация -->
                     <div id='pagin-search' class='search-pagin-blok'>
+                    ${this.app.views.renderPagination(queryParams, 'search', '', Number(queryParams['PageIndex']), 1, countPaginPages, 10, "Страницы результатов: ", '', '', false, 'search')}
                     </div><!--/search-pagin-blok-->`
+                : '';
         }
-
 
         res.title = title;
         res.cnt = cnt;
 
         return res;
-    }
-
-    prepareElementsView(infos, searchData) {
-        const elementsView = [];
-        const patternHightlight = searchData.searchString;// (searchData.InParagraph ? searchData.searchString : searchData.patternHightlight) || "";
-
-        /*infos.each(_info => {
-        });*/
-        for (var i in infos) {
-            const _info = infos[i];
-
-            elementsView.push(this.renderContent(_info, searchData, patternHightlight));
-        }
-
-        return elementsView;
     }
 
     renderContent(_info, searchData, patternHightlight) {
@@ -211,37 +270,43 @@ class Search {
         let date = anyToMoscow(_info.Date);
         let catalog = _info.Catalog;
 
-        let info = { Description: descript, Link: link, Para: para, Titles: titles, Date: date, Catalog: catalog, NameView: (titles.length > 0 ? titles[0].replace("<nobr>", "").replace("</nobr>", "") : "") };
+        let info = { Description: descript, Link: link, Para: para, Titles: titles, Date: date, Catalog: catalog, NameView: (titles && titles.length > 0 ? titles[0].replace("<nobr>", "").replace("</nobr>", "") : "") };
 
         if (info.Link.includes("index")) return; // из результатов поиска исключаем страницу index
 
         const searchOptions = "g" + (searchData.widthCASE ? '' : 'i');
         let description = "";
         if (searchData.where !== 'Date') {
-            let desc = info.Description.replace(/[\n\r]+/, "");
+            let desc = info.Description.replace(/[\n\r]+/g, "");
 
-            let matches = undefined;
-            if (searchData.where == 'Titles') matches = desc.matchAll(RegExp('<div class="next">(?<title>.*?)<\/div>', searchOptions));
-            else if (searchData.where == 'Quote') matches = desc.matchAll(RegExp("(?<para>.*)", searchOptions));
-            else matches = desc.matchAll(RegExp('(?:<p.*?>(?<para>.*?)<\/p>)|(?:<div class="next">(?<title>.*?)<\/div>)', searchOptions));
+            let matches;
+            let regexp;
+            if (searchData.where == 'Titles') regexp = RegExp('<div class="next">(?<title>.*?)<\/div>', searchOptions);// desc.matchAll(RegExp('<div class="next">(?<title>.*?)<\/div>', searchOptions));
+            else if (searchData.where == 'Quote') regexp = RegExp("^(?<para>.*)", searchOptions); // matches = desc.matchAll(RegExp("(?<para>.*)", searchOptions));
+            else regexp = RegExp('(?:<p.*?>(?<para>.*?)<\/p>)|(?:<div class="next">(?<title>.*?)<\/div>)', searchOptions);// matches = desc.matchAll(RegExp('(?:<p.*?>(?<para>.*?)<\/p>)|(?:<div class="next">(?<title>.*?)<\/div>)', searchOptions));
             let subTitle = "";
 
-            for (const itemMatch of matches) {
+            let itemMatch;
+            //for (const itemMatch of matches) {
+            while (itemMatch = regexp.exec(desc)) {
                 if (itemMatch.groups["title"]) {
-                    const titleValue = itemMatch[2];
+                    const titleValue = itemMatch[0];
                     const isMatch = RegExp(patternHightlight, searchOptions).test(titleValue);
                     if (searchData.where !== 'Titles' || (searchData.where === 'Titles' && isMatch)) {
-                        //console.log('Найдено совпадение');
-                        const subTitleMatch = itemMatch.groups["title"].matchAll(RegExp('name="(?<number>\.)".*<\/a>(?<title>.*)', searchOptions));
-                        const subTitleMatchItems = Array.from(subTitleMatch);
-                        const numb = subTitleMatchItems[0].groups["number"];
-                        const subTitleText = subTitleMatchItems[0].groups["title"].replace(/h1/g, "h4");
+                        //const subTitleMatch = itemMatch.groups["title"].matchAll(RegExp('name="(?<number>\.)".*<\/a>(?<title>.*)', searchOptions));
+                        const subTitleMatch = RegExp('name="(?<number>\.)".*<\/a>(?<title>.*)', searchOptions).exec(itemMatch.groups["title"]);
+                        //const subTitleMatchItems = Array.from(subTitleMatch);
+                        const numb = subTitleMatch.groups["number"];
+                        const subTitleText = subTitleMatch.groups["title"].replace(/<(\/)?h1>/g, "");
 
                         const highlight = searchData.patternHightlight ? subTitleText.replace(RegExp(searchData.patternHightlight, searchOptions), "<span class='hightlight'>" + searchData.sectionHightlight + "</span>") : subTitleText; // подсвечиваем найденную фразу
-                        subTitle = `<a href='/${(!info.Link ? "" : info.Link + ".html#") + numb}'>` + highlight + "</a>";
+                        subTitle = `<a target="_blank" href='${(!info.Link ? "" : info.Link + ".html#") + numb}'>
+                        <h4${searchData && searchData.viewedList && searchData.viewedList.includes(info.Link + '#' + numb) ? " style='color: peru!important;'" : ""}
+                        data-msu-pagesearch='true'
+                        >` + highlight + "</h4></a>";
 
                         if (searchData.where === 'Titles'
-                            || ((searchData.where === 'Mess' || searchData.where === 'Poems') && isMatch)
+                            || ((searchData.where === 'Mess' || searchData.where === 'Poems' || searchData.where === 'Site') && isMatch)
                         )
                         {
                             description += subTitle;
@@ -251,7 +316,7 @@ class Search {
                 else if (searchData.patternHightlight && RegExp(patternHightlight, searchOptions).test(itemMatch[1]))
                 {
                     if (itemMatch.groups["para"]) {
-                        const paraValue = itemMatch[1];
+                        const paraValue = itemMatch[0];
                         const highlight = paraValue.replace(RegExp(searchData.patternHightlight, searchOptions), "<span class='hightlight'>" + searchData.sectionHightlight + "</span>"); // подсвечиваем найденную фразу
                         if (searchData.where !== 'Quote')
                             description += (subTitle ? subTitle : "") + highlight.replace("text-align:right;", "");
@@ -274,9 +339,6 @@ class Search {
         {
             /// сюда мы могли попасть, например, когда искомая фраза нашлась (например "основан * религии"), поиск ведётся в пределах абзаца, но слова из искомой фразы находятся не в пределах одного азаца
         }
-
-
-        console.log(info.Link);
 
         return elementView;
     }

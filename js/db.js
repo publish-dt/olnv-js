@@ -286,7 +286,9 @@ async function downloadAndUnzip(url, isFile) {
 			// Обрабатываем содержимое архива
 			const files = [];
 
-			for (const [filename, file] of Object.entries(unzipped.files)) {
+			//for (const [filename, file] of Object.entries(unzipped.files)) {
+			for (const filename in unzipped.files) {
+				const file = unzipped.files[filename];
 				if (!file.dir) { // Пропускаем папки
 					const content = await file.async(isFile ? 'arraybuffer' : 'string');
 
