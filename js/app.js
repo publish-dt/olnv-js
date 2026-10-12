@@ -41,6 +41,18 @@ class App {
 				ByLink: false,
 				Route: ["novosti"],
 				Title: "Новости и объявления"
+			},
+			{
+				Name: "Откровения",
+				//ToMenu: true,
+				View: "InfoList",
+				Catalogs: [
+					this.catalogs.dict
+				],
+				ByLink: false,
+				Route: ["otkroveniya"],
+				Title: "Откровения",
+				ParamView: [ true ]
 			}
 		];
 
@@ -114,8 +126,8 @@ class App {
 	buildBlockUpdate(isLastCheckGood, lastCheck, lastUpdated) {
 		const lastCheckEl = document.getElementById('last-check');
 		lastCheckEl.innerHTML = lastCheck ? toDateTime.format(lastCheck) : '--';
-		lastCheckEl.style.cssText = (!isLastCheckGood || false) ? 'color: peru !important;' : '';
-		lastCheckEl.title = (!isLastCheckGood || false) ? 'Неудачная проверка обновлений' : 'Время последней проверки по наличию новой информации';
+		lastCheckEl.style.cssText = (isLastCheckGood === false) ? 'color: peru !important;' : '';
+		lastCheckEl.title = (isLastCheckGood === false) ? 'Неудачная проверка обновлений' : 'Время последней проверки по наличию новой информации';
 
 		const lastlastUpdatedEl = document.getElementById('last-updated');
 		lastlastUpdatedEl.innerHTML = lastUpdated ? toDateTime.format(lastUpdated) : '--';

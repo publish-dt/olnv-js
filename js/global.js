@@ -1,3 +1,4 @@
+window.verApp = '1.0.0-alpha6';
 window.netOffline = undefined;
 
 window.onerror = function (message, url, line, col, error) {
@@ -49,11 +50,17 @@ function intToRoman(num) {
     return result;
 }
 
-function anyToMoscow(date) {
+function getMonthName(monthIndex) {
+    const months = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+    return months[monthIndex];
+}
+
+function strToDate(date) {
     return new Date(date);
 }
 
-const toShortDate = new Intl.DateTimeFormat('ru-RU', {
+const toShortMoscowDate = new Intl.DateTimeFormat('ru-RU', {
+    timeZone: 'Europe/Moscow',
     year: "2-digit",
     month: "numeric",
     day: "numeric"
@@ -74,7 +81,7 @@ function sleep(ms) {
 }
 
 function clearAllData() {
-    if (confirm('Очистить базу данных?')) {
+    if (confirm(`Очистить базу данных? (версия: ${window.verApp})`)) {
         db.delete();
 
         //localStorage.clear();
@@ -88,3 +95,6 @@ function clearAllData() {
         caches.delete('cnt');
     }
 }
+
+footerYearEl = document.getElementById('footer-year');
+footerYearEl.innerHTML = (new Date()).getFullYear();

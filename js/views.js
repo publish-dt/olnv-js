@@ -6,6 +6,60 @@ class Views {
 		this.app = app;
 	}
 
+    renderInfoList(route, infos) {
+        const res = {};
+        const title = route.Title;
+
+        let cnt = `<h1 class="page-title">${title}</h1>
+            <div class="container-fluid">
+        `;
+
+        const grouped = infos.reduce((acc, info) => {
+            const date = strToDate(info.Date);
+            const groupName = getMonthName(date.getMonth()) + ` ${date.getFullYear()} года`;
+            if (!acc[groupName]) {
+                acc[groupName] = [];
+            }
+            acc[groupName].push(info);
+            return acc;
+        }, {});
+
+        for (var i in grouped) {
+            const group = grouped[i];
+            if (group.length > 0) {
+                let preDay = 0;
+
+                cnt += `
+                    <div class="razdel row">
+                        <h2>${i}</h2>
+                        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 col-tolk">
+                `;
+
+                for (var j in group) {
+                    const info = group[j];
+                    const num = strToDate(info.Date).getDate();
+                    const number = ('0' + num).slice(-2);
+
+                    cnt += `
+                        <a href="${info.Link}.html">${preDay === num ? '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' : number+': '}${info.Titles[0]}</a > <br />
+                    `;
+
+                    preDay = num;
+                }
+
+                cnt += '</div></div>';
+            }
+        }
+        cnt += '</div>';
+
+        cnt += this.app.views.renderFooter(undefined, '', '', '');
+
+        res.cnt = cnt;
+        res.tite = title;
+
+        return res;
+    }
+
     renderPagination(queryParams, prefixPath, suffixPath, curPosition, firstNumber, lastNumber, maxPaginSeries, prefixSeries, betweenSeries, postfixSeries, numberAsPath, typeContent, paginTpl) {
         let renderPagination = "";
 

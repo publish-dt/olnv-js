@@ -233,8 +233,8 @@ class Search {
                                 </a>`;
                                 cnt += ((info.Catalog == this.app.catalogs.poems || info.Catalog == this.app.catalogs.dict || info.Catalog == this.app.catalogs.tolk) ?
                                     `<span> (
-                                        ${(info.Catalog == this.app.catalogs.poems ? "Катрен" : "Послание")} от ${(toShortDate.format(new Date(info.Date))) }
-                                        ${ (info.Catalog == this.app.catalogs.dict || info.Catalog == this.app.catalogs.tolk ? ", книга " + intToRoman(((new Date(info.Date)).getFullYear() - 2000 - 3)) : "")}
+                                        ${(info.Catalog == this.app.catalogs.poems ? "Катрен" : "Послание")} от ${(toShortMoscowDate.format(strToDate(info.Date))) }
+                                        ${ (info.Catalog == this.app.catalogs.dict || info.Catalog == this.app.catalogs.tolk ? ", книга " + intToRoman(((strToDate(info.Date)).getFullYear() - 2000 - 3)) : "")}
                                     )</span>`
                                 : (
                                     dataView.where !== 'Quote' ?
@@ -242,7 +242,7 @@ class Search {
                                             ${(info.Catalog == this.app.catalogs.notices ? "Объявление от "
                                             : (info.Catalog == this.app.catalogs.infos ? ""
                                                     : (this.app.catalogsName[info.Catalog] + " от ")))}
-                                            ${(toShortDate.format(new Date(info.Date)))}
+                                            ${(toShortMoscowDate.format(strToDate(info.Date)))}
                                         )</span>`
                                     : ""
                                     )
@@ -281,7 +281,7 @@ class Search {
         let link = _info.Link;
         let para = _info.Para;
         let titles = _info.Titles;
-        let date = anyToMoscow(_info.Date);
+        let date = strToDate(_info.Date);
         let catalog = _info.Catalog;
 
         let info = { Description: descript, Link: link, Para: para, Titles: titles, Date: date, Catalog: catalog, NameView: (titles && titles.length > 0 ? titles[0].replace("<nobr>", "").replace("</nobr>", "") : "") };

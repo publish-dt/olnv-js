@@ -72,8 +72,8 @@ class DB {
 async function fillInfos(serviceDwld, serviceData, url, app, isAwait) {
 	const res = {};
 
-	const lastDateChange = new Date(serviceDwld.LastDateChange);
-	const lastDateChangeStore = (serviceData === undefined || serviceData.LastDateChange === undefined ? new Date(0, 0, 0) : new Date(serviceData.LastDateChange));
+	const lastDateChange = strToDate(serviceDwld.LastDateChange);
+	const lastDateChangeStore = (serviceData === undefined || serviceData.LastDateChange === undefined ? strToDate(0, 0, 0) : strToDate(serviceData.LastDateChange));
 	if (serviceData === undefined || lastDateChange > lastDateChangeStore) {
 		let nameZip = serviceData === undefined || Math.round((lastDateChange - lastDateChangeStore) / (1000 * 60 * 60 * 24)) >= 7 ? "full" : "last";
 
@@ -108,8 +108,8 @@ async function fillInfos(serviceDwld, serviceData, url, app, isAwait) {
 							if (jsonString !== "") {
 								const obj = JSON.parse(jsonString);
 
-								const dateChange = new Date(obj.DateChange);
-								const date = new Date(obj.Date);
+								const dateChange = strToDate(obj.DateChange);
+								const date = strToDate(obj.Date);
 								if (obj.Active === true && (dateChange > lastDateChangeStore || (lastPoemStore && obj.Id === lastPoemStore.Id) || (lastTolkStore && obj.Id === lastTolkStore.Id))) { // это новый/изменённый материал или последний Катрен/Послание, это нужно, чтобы старые и не изменённые материалы не пересохранять в БД
 									let isFound = false;
 									await db.infos.where("Id").equalsIgnoreCase(obj.Id).modify((value, ref) => { // изменяем существующую запись в БД
@@ -179,7 +179,7 @@ async function fillInfos(serviceDwld, serviceData, url, app, isAwait) {
 	}
 	else if (serviceData !== undefined && lastDateChange < lastDateChangeStore) {
 		// на текущем сервере давно не обновлялись архивы данных
-		console.log(`На сервере ${url} давно не обновлялись данные. Необходимо сообщить об этом администратору!`);
+		console.log(`На сервере ${url} давно не обновлялись данные. Необходимо сообщить об этом администратору по электронной почте: webmaster@otkroveniya.info`);
 	}
 
 	return res;
@@ -189,8 +189,8 @@ async function fillFiles(serviceDwld, serviceData, url, app) {
 
 	for (var i in serviceDwld.InfoFiles) {
 
-		const lastDateChange = new Date(serviceDwld.InfoFiles[i]);
-		const lastDateChangeStore = (serviceData === undefined || serviceData.InfoFiles === undefined || serviceData.InfoFiles[i] === undefined ? new Date(0, 0, 0) : new Date(serviceData.InfoFiles[i]));
+		const lastDateChange = strToDate(serviceDwld.InfoFiles[i]);
+		const lastDateChangeStore = (serviceData === undefined || serviceData.InfoFiles === undefined || serviceData.InfoFiles[i] === undefined ? strToDate(0, 0, 0) : strToDate(serviceData.InfoFiles[i]));
 		if (serviceData === undefined || lastDateChange > lastDateChangeStore) {
 			const nameZip = i;
 

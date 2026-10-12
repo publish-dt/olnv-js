@@ -82,7 +82,7 @@ class Router {
 
                     //const infoDict = infosDict[0];
                     if (infoDict) {
-                        const dateLastDict = new Date(infoDict.Date);
+                        const dateLastDict = strToDate(infoDict.Date);
                         lastDict = `<a href='/${infoDict.Link}.html'>Последнее Послание</a> (от ${dateLastDict.toLocaleDateString("ru-RU", options)})`;
                     }
 
@@ -100,7 +100,7 @@ class Router {
 
                     //const infoPoems = infosPoems[0];
                     if (infoPoems) {
-                        const dateLastPoem = new Date(infoPoems.Date);
+                        const dateLastPoem = strToDate(infoPoems.Date);
                         lastPoem = `<a href='/${infoPoems.Link}.html'>Последний Катрен</a> (от ${dateLastPoem.toLocaleDateString("ru-RU", options)})`;
                     }
                 }
@@ -160,7 +160,7 @@ class Router {
                         infoIsList = true;
                     }*/
 
-                    const coll = db['infos']
+                    let coll = db['infos']
                         .where(routeBy)
                         .equalsIgnoreCase(routeVal);
                         //.filter((info) => regexp.test(info.Link))
@@ -171,17 +171,27 @@ class Router {
                         /*.each(async (info) => {
                         });*/
 
-                    const infos = !route.ByLink ? await coll.desc().sortBy('Date') : await coll.toArray();
+                    if (route.ParamView && route.ParamView[0]) coll = coll;
+                    else coll = coll.desc();
+
+                    const infos = !route.ByLink ? await coll.sortBy('Date') : await coll.toArray();
 
                     if (location.pathname.endsWith('search')) {
                         if (targetEl.dataset.msuPagesearch && (new Boolean(targetEl.dataset.msuPagesearch))) modelSearch = this.app.stateContainer.modelSearch;
                         else this.app.stateContainer.modelSearch = {};
                     }
 
-                    const res = await this.renderView(path, infos, cnt, prePage, lastDict, lastPoem, route, modelSearch);
-                    cnt = res.cnt;
-                    state.title = res.title;
-                    documentTitle = res.title;
+                    let res;
+                    if (route.View)
+                        res = await this.app.views[`render${route.View}`](route, infos);
+                    else
+                        res = await this.renderView(path, infos, cnt, prePage, lastDict, lastPoem, route, modelSearch);
+
+                    if (res) {
+                        cnt = res.cnt;
+                        state.title = res.title;
+                        documentTitle = res.title;
+                    }
                 }
             }
         }
@@ -270,7 +280,6 @@ class Router {
                 }
             }
             else {
-                mainContEl.innerHTML = cnt;
 
                 if (path !== 'index' && !path.startsWith('search?')) {
                     let bookmarks = await dbApp.settings.get('bookmarks');
@@ -296,6 +305,8 @@ class Router {
                 document.title = documentTitle;
             }
         }
+
+        if (settings !== undefined && !newTab) mainContEl.innerHTML = cnt;
 
         state.path = path;
         state.hash = hash;
@@ -355,7 +366,7 @@ class Router {
         }
 
         if (!info.Data.NoFooter)
-            cnt += `<p class="date-footer">${(toShortDate.format(new Date(info.Date)))}</p>`;
+            cnt += `<p class="date-footer">${(toShortMoscowDate.format(strToDate(info.Date)))}</p>`;
 
         return cnt;
     }
@@ -370,7 +381,10 @@ class Router {
             const title = route.Title ? route.Title : infos[0].Titles[0];
             res.title = title;
 
-            cnt += `<h1 class="page-title"><span class="date">${(toShortDate.format(new Date(info.Date)))}</span> ${title}</h1>`;
+            const isNoDate = info.Catalog === this.app.catalogs.infos || info.Catalog === this.app.catalogs.notices || info.Catalog === this.app.catalogs.dict || info.Link === '2004/predislovie';
+            const match = !isNoDate ? info.Link.match(/^.*\/(?<date>\d{2}-\d{2}\.\d{2}\.\d{2})$/) : undefined;
+            const dateStr = isNoDate ? '' : (match && match.groups ? match.groups.date : toShortMoscowDate.format(strToDate(info.Date)));
+            cnt += `<h1 class="page-title">${dateStr ? '<span class="date">'+dateStr+'</span> ' : ''}${title}</h1>`;
 
             for (var j in infos) {
                 const info = infos[j];
