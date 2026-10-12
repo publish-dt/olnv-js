@@ -9,9 +9,6 @@ class Search {
 
     async renderSearch(query) {
 
-        const spinnerEl = document.getElementById('spinner-search');
-        spinnerEl.style.display = 'inline-block';
-
         const queryParams = {};
         const queryArr = query.substring(query.indexOf('?') + 1).split('&');
         for (const key in queryArr) {
@@ -25,121 +22,125 @@ class Search {
             }*/
         }
         let searchString = queryParams['SearchString'];
-        const where = queryParams['Where'];
+        const where = queryParams['Where'] || 'Site';
 
+        let advError;
+        let dataView;
+        const spinnerEl = document.getElementById('spinner-search');
         searchString = decodeURIComponent(searchString);
-        if (!searchString || !where) return;
-        console.log(`Начат поиск по фразе '${searchString}'`);
+        if (searchString) {
+            spinnerEl.style.display = 'inline-block';
+            console.log(`Начат поиск по фразе '${searchString}'`);
 
-        let advError = undefined;
 
-        let catalogsSearch = [];
-        let collName = 'infos';
-        let propSearch = 'Description';
-        switch (where) {
-            case 'Mess':
-                catalogsSearch = [this.app.catalogs.dict, this.app.catalogs.tolk];
-                break;
-            case 'Poems':
-                catalogsSearch = [this.app.catalogs.poems];
-                break;
-            case 'Titles':
-                propSearch = 'Titles';
-                break;
-            case 'Site':
-                break;
-            case 'Date':
-                propSearch = 'Date';
-                const splitter = searchString.indexOf('.') !== -1 ? '.' : '/';
-                try {
-                    let [day, month, year] = searchString.split(splitter).map(String);
-                    if (year && year.length === 2) year = '20' + year;
-                    if (!year) year = '';
-                    if (month.startsWith('20')) {
-                        year = month;
-                        month = day;
-                        day = '';
+            let catalogsSearch = [];
+            let collName = 'infos';
+            let propSearch = 'Description';
+            switch (where) {
+                case 'Mess':
+                    catalogsSearch = [this.app.catalogs.dict, this.app.catalogs.tolk];
+                    break;
+                case 'Poems':
+                    catalogsSearch = [this.app.catalogs.poems];
+                    break;
+                case 'Titles':
+                    propSearch = 'Titles';
+                    break;
+                case 'Site':
+                    break;
+                case 'Date':
+                    propSearch = 'Date';
+                    const splitter = searchString.indexOf('.') !== -1 ? '.' : '/';
+                    try {
+                        let [day, month, year] = searchString.split(splitter).map(String);
+                        if (year && year.length === 2) year = '20' + year;
+                        if (!year) year = '';
+                        if (month.startsWith('20')) {
+                            year = month;
+                            month = day;
+                            day = '';
+                        }
+                        if (isNaN(new Date(year, month - 1, day))) throw 'Формат даты не распознан.'; // это только для проверки даты
+                        /*// может не правильно искать, т.к. есть смещение зоны, т.е. текстовая дата может быть другой, т.е. надо преобразовать в дату с учётом зоны
+                        const dateUTC = new Date(Date.UTC(year, month - 1, day)); //new Date(year, month - 1, day);
+                        const isoDate = dateUTC.toISOString()
+                        searchString = isoDate.substring(0, isoDate.indexOf('T'));*/
+                        searchString = `${year}-${month}-${day}`; // T - не надо, т.к. поиск по ММ.20ГГ не будет выполнен, кроме того когда будет без учёта регистра .toLowerCase(), то 'T' будет маленькой
+                    } catch (e) {
+                        console.error('Формат даты не распознан.');
+                        advError = `
+                            <p>Формат даты не распознан.</p>
+                            <p>Дата должна быть указана в одном из следующих форматов:<br><strong>ДД.ММ.20ГГ<br>ДД.ММ.ГГ<br>ДД.ММ<br>ММ.20ГГ</strong></p>
+                            <p>Разделителем групп цифр может быть точка или наклонная черта (<strong>/</strong>).</p>
+                        `;
                     }
-                    if (isNaN(new Date(year, month - 1, day))) throw 'Формат даты не распознан.'; // это только для проверки даты
-                    /*// может не правильно искать, т.к. есть смещение зоны, т.е. текстовая дата может быть другой, т.е. надо преобразовать в дату с учётом зоны
-                    const dateUTC = new Date(Date.UTC(year, month - 1, day)); //new Date(year, month - 1, day);
-                    const isoDate = dateUTC.toISOString()
-                    searchString = isoDate.substring(0, isoDate.indexOf('T'));*/
-                    searchString = `${year}-${month}-${day}`; // T - не надо, т.к. поиск по ММ.20ГГ не будет выполнен, кроме того когда будет без учёта регистра .toLowerCase(), то 'T' будет маленькой
-                } catch (e) {
-                    console.error('Формат даты не распознан.');
-                    advError = `
-                        <p>Формат даты не распознан.</p>
-                        <p>Дата должна быть указана в одном из следующих форматов:<br><strong>ДД.ММ.20ГГ<br>ДД.ММ.ГГ<br>ДД.ММ<br>ММ.20ГГ</strong></p>
-                        <p>Разделителем групп цифр может быть точка или наклонная черта (<strong>/</strong>).</p>
-                    `;
+                    break;
+                case 'Quote':
+                    collName = 'quote';
+                    break;
+                default:
+            }
+
+            const searchData = this.app.stateContainer.modelSearch;// { where: where, searchString: searchString, pageIndex: queryParams['PageIndex'] ? queryParams['PageIndex'] : 1, widthCASE: false };
+            searchData.where = where;
+            searchData.searchString = searchString;
+            searchData.pageIndex = queryParams['PageIndex'] ? queryParams['PageIndex'] : 1;
+            searchData.widthCASE = false;
+            searchData.inParagraph = false;
+            searchData.patternHightlight = '';
+            searchData.sectionHightlight = '';
+
+            // обрабатываем * в поисковой фразе
+            var startWord = /*modelSearch.StartEndWord == 1 || modelSearch.StartEndWord == 2 ? "\\b" :*/ "";
+            var endWord = /*modelSearch.StartEndWord == 1 ? "\\b" :*/ "";
+
+            var arrSearchString = searchString.split(" * ");
+            for (let i = 0; i < arrSearchString.length; i++)
+            {
+                if (arrSearchString[i]) {
+                    var matchTrimed = arrSearchString[i].match(/(\w+\W*)+\b/); // обрезаем вначале и в конце фразы все символы пунктуации
+                    if (matchTrimed) arrSearchString[i] = matchTrimed[0].replace(/[^\w*]/, "\W") // внутри фразы заменяем все символы (кроме *) пунктуации на регулярное выражение \W
+                        .replace("*", "\w*"); // это для поиска слов (внутри фразы) с произвольным окончанием
+
+                    arrSearchString[i] = startWord + arrSearchString[i] + endWord;
+
+                    searchData.patternHightlight += (searchData.patternHightlight ? "|(" : "(") + arrSearchString[i] + ")";
+                    searchData.sectionHightlight += "$" + (i + 1);
                 }
-                break;
-            case 'Quote':
-                collName = 'quote';
-                break;
-            default:
-        }
-
-        const searchData = this.app.stateContainer.modelSearch;// { where: where, searchString: searchString, pageIndex: queryParams['PageIndex'] ? queryParams['PageIndex'] : 1, widthCASE: false };
-        searchData.where = where;
-        searchData.searchString = searchString;
-        searchData.pageIndex = queryParams['PageIndex'] ? queryParams['PageIndex'] : 1;
-        searchData.widthCASE = false;
-        searchData.inParagraph = false;
-        searchData.patternHightlight = '';
-        searchData.sectionHightlight = '';
-
-        // обрабатываем * в поисковой фразе
-        var startWord = /*modelSearch.StartEndWord == 1 || modelSearch.StartEndWord == 2 ? "\\b" :*/ "";
-        var endWord = /*modelSearch.StartEndWord == 1 ? "\\b" :*/ "";
-
-        var arrSearchString = searchString.split(" * ");
-        for (let i = 0; i < arrSearchString.length; i++)
-        {
-            if (arrSearchString[i]) {
-                var matchTrimed = arrSearchString[i].match(/(\w+\W*)+\b/); // обрезаем вначале и в конце фразы все символы пунктуации
-                if (matchTrimed) arrSearchString[i] = matchTrimed[0].replace(/[^\w*]/, "\W") // внутри фразы заменяем все символы (кроме *) пунктуации на регулярное выражение \W
-                    .replace("*", "\w*"); // это для поиска слов (внутри фразы) с произвольным окончанием
-
-                arrSearchString[i] = startWord + arrSearchString[i] + endWord;
-
-                searchData.patternHightlight += (searchData.patternHightlight ? "|(" : "(") + arrSearchString[i] + ")";
-                searchData.sectionHightlight += "$" + (i + 1);
             }
-        }
-        searchString = arrSearchString.join(".*");
+            searchString = arrSearchString.join(".*");
 
-        let infos = [];
-        if (!advError) {
-            searchString = searchString;//.toLowerCase();
+            let infos = [];
+            if (!advError) {
+                searchString = searchString;//.toLowerCase();
 
-            let coll = undefined;
-            if (catalogsSearch.length) coll = db[collName].where('Catalog').anyOf(catalogsSearch);
-            else coll = db[collName];
-            if (propSearch === 'Titles') coll = coll.filter((info) => {
-                const index = info.Titles.findIndex(str => str/*.toLowerCase()*/.includes(searchString));
-                return index !== -1 ? true : false;
-            });
-            else if (propSearch === 'Date') {
-                if (searchString.startsWith('-'))
-                    coll = coll.filter((info) => info.Date.indexOf(searchString) > -1);
-                    //coll = coll.filter((info) => (new RegExp(searchString, 'gim')).test(info[propSearch]));
-                else coll = coll.where(propSearch).startsWith(searchString);
+                let coll = undefined;
+                if (catalogsSearch.length) coll = db[collName].where('Catalog').anyOf(catalogsSearch);
+                else coll = db[collName];
+                if (propSearch === 'Titles') coll = coll.filter((info) => {
+                    const index = info.Titles.findIndex(str => str/*.toLowerCase()*/.includes(searchString));
+                    return index !== -1 ? true : false;
+                });
+                else if (propSearch === 'Date') {
+                    if (searchString.startsWith('-'))
+                        coll = coll.filter((info) => info.Date.indexOf(searchString) > -1);
+                        //coll = coll.filter((info) => (new RegExp(searchString, 'gim')).test(info[propSearch]));
+                    else coll = coll.where(propSearch).startsWith(searchString);
+                }
+                else
+                    coll = coll.filter((info) => (new RegExp(searchString, 'gim')).test(info[propSearch])); // нужно обязательно здесь делать new RegExp иначе неправильные результаты - https://github.com/dexie/Dexie.js/issues/1405?ysclid=muod2qrm235706232?ysclid=muod2qrm235706232
+                    //coll = coll.filter((info) => info[propSearch]/*.toLowerCase()*/.indexOf(searchString) > -1); // RegExp работает быстрее
+
+                const startTime = new Date();
+                infos = await coll.sortBy('Date'); //  
+                const endTime = new Date();
+
+                console.log(`Поиск по фразе '${searchString}' окончен! Найдено ${infos.length} материалов. Заняло: ${endTime - startTime}`);
             }
-            else
-                coll = coll.filter((info) => (new RegExp(searchString, 'gim')).test(info[propSearch])); // нужно обязательно здесь делать new RegExp иначе неправильные результаты - https://github.com/dexie/Dexie.js/issues/1405?ysclid=muod2qrm235706232?ysclid=muod2qrm235706232
-                //coll = coll.filter((info) => info[propSearch]/*.toLowerCase()*/.indexOf(searchString) > -1); // RegExp работает быстрее
 
-            const startTime = new Date();
-            infos = await coll.sortBy('Date'); //  
-            const endTime = new Date();
 
-            console.log(`Поиск по фразе '${searchString}' окончен! Найдено ${infos.length} материалов. Заняло: ${endTime - startTime}`);
+            dataView = this.prepareDataView(infos, searchData);
         }
-
-
-        const dataView = this.prepareDataView(infos, searchData);
         const res = await this.renderView(dataView, advError, queryParams);
 
         spinnerEl.style.display = 'none';
@@ -174,17 +175,20 @@ class Search {
     async renderView(dataView, advError, queryParams) {
         const title = 'Результаты поиска';
         const res = {};
-        const elementsView = dataView.elementsView;
+
+        let cnt = `<h1 id='pageTitle' class='page-title'>${title}</h1>`;
+        if (!dataView) return { title: title, cnt: cnt + "<p style='color: red;'>Необходимо ввести поисковую фразу</p>" };
+
+        const elementsView = dataView.elementsView ;
         //const modelSearch = this.app.stateContainer.modelSearch;
 
         const itemCount = dataView.itemCount;
         let whereText = await this.getHeaderTextParams(dataView.where, itemCount);
 
-        let cnt = `<h1 id='pageTitle' class='page-title'>${title}</h1>
-            <div id='res'>
-            <div id='msg-search'>
-            <p>
-            <span>Вы искали ${whereText[0]} ${(dataView.where !== 'Date' ? "фрагмент " : "")}“<strong>${dataView.searchString}</strong>”.</span><br />`;
+        cnt += `<div id='res'>
+                    <div id='msg-search'>
+                    <p>
+                    <span>Вы искали ${whereText[0]} ${(dataView.where !== 'Date' ? "фрагмент " : "")}“<strong>${dataView.searchString}</strong>”.</span><br />`;
 
         cnt += itemCount > 0 ?
             (dataView.where !== 'Date' ?
@@ -229,7 +233,7 @@ class Search {
                                 </a>`;
                                 cnt += ((info.Catalog == this.app.catalogs.poems || info.Catalog == this.app.catalogs.dict || info.Catalog == this.app.catalogs.tolk) ?
                                     `<span> (
-                                        ${(info.Catalog == this.app.catalogs.poems ? "Катрен" : "Послание")} от ${(new Date(info.Date)).toLocaleDateString("ru-RU", optShortDate) }
+                                        ${(info.Catalog == this.app.catalogs.poems ? "Катрен" : "Послание")} от ${(toShortDate.format(new Date(info.Date))) }
                                         ${ (info.Catalog == this.app.catalogs.dict || info.Catalog == this.app.catalogs.tolk ? ", книга " + intToRoman(((new Date(info.Date)).getFullYear() - 2000 - 3)) : "")}
                                     )</span>`
                                 : (
@@ -237,8 +241,8 @@ class Search {
                                         `<span> (
                                             ${(info.Catalog == this.app.catalogs.notices ? "Объявление от "
                                             : (info.Catalog == this.app.catalogs.infos ? ""
-                                            : (this.app.catalogsName[info.Catalog] + " от ")))}
-                                            ${(new Date(info.Date)).toLocaleDateString("ru-RU", optShortDate)}
+                                                    : (this.app.catalogsName[info.Catalog] + " от ")))}
+                                            ${(toShortDate.format(new Date(info.Date)))}
                                         )</span>`
                                     : ""
                                     )

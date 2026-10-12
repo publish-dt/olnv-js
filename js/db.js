@@ -10,15 +10,21 @@ class DB {
 	async fillDb(isAwait) {
 		
 		if (this.app.stateContainer.updateInfo.updateStarted)
-			return;
-		this.app.stateContainer.updateInfo = {
-			updateStarted: true
-		};
+			return; // если загрузка архивов данных уже началась, то не запускаем её ещё раз
+
+		const spinnerUpdatedEl = document.getElementById('spinner-updated');
+		spinnerUpdatedEl.style.display = 'inline-block';
+
+		const lastCheck = new Date();
+
+		this.app.stateContainer.updateInfo.updateStarted = true;
 
 
-		// 'https://cors-anywhere.herokuapp.com/http://otk-data.website.yandexcloud.net'
-		const url = 'https://publish-dt.github.io/otk-data/exp'; // 'data'; // 
+		// 'https://cors-anywhere.herokuapp.com/https://otk-data.web.app'    http://otk-data.website.yandexcloud.net
+		const url = 'https://publish-dt.github.io/otk-data/exp'; // 'data'; // 'https://otk-data.pages.dev'; // 
 
+		let isLastCheckGood;
+		let lastUpdated;
 		const serviceDwld = await download(url + '/service.json');
 		if (serviceDwld) {
 			const serviceData = await db.settings.get('serviceData');
@@ -27,13 +33,37 @@ class DB {
 			await fillFiles(serviceDwld, serviceData, url, this.app);
 			await fillQuote(serviceDwld, serviceData, url, this.app);
 
-			if (!isAwait && Object.keys(res).length > 0 && (res.numberNewData > 0 || res.numberChangeData > 0))
-				alert(`Загружено: ${res.numberNewData} новых материалов и ${res.numberChangeData} изменённых материалов`);
+			isLastCheckGood = true;
+
+			if (Object.keys(res).length > 0) {
+				if (!isAwait && (res.numberNewData > 0 || res.numberChangeData > 0))
+					alert(`Загружено: ${res.numberNewData} новых материалов и ${res.numberChangeData} изменённых материалов`);
+
+				lastUpdated = lastCheck;
+				this.app.stateContainer.updateInfo.lastUpdated = lastUpdated;
+				if (lastUpdated) localStorage.setItem('olnvjs_lastUpdated', JSON.stringify(lastUpdated));
+			}
 		}
 		else {
 			if (netOffline) alert('Нет подключения к интернету!');
-			else alert('Не удалось загрузить данные из otk-data');
+			else {
+				//alert('Не удалось загрузить данные из otk-data');
+				isLastCheckGood = false;
+			}
 		}
+
+		if (!lastUpdated)
+			lastUpdated = this.app.stateContainer.updateInfo.lastUpdated;
+
+		this.app.stateContainer.updateInfo.isLastCheckGood = isLastCheckGood;
+		this.app.stateContainer.updateInfo.lastCheck = lastCheck;
+
+		this.app.buildBlockUpdate(isLastCheckGood, lastCheck, lastUpdated);
+
+		spinnerUpdatedEl.style.display = 'none';
+
+		if (lastCheck) localStorage.setItem('olnvjs_lastCheck', JSON.stringify(lastCheck));
+		if (isLastCheckGood !== undefined) localStorage.setItem('olnvjs_isLastCheckGood', JSON.stringify(isLastCheckGood));
 
 		this.app.stateContainer.updateInfo.updateStarted = false;
 	}
@@ -52,11 +82,11 @@ async function fillInfos(serviceDwld, serviceData, url, app, isAwait) {
 		/*if (nameZip === 'full') url = '/data';
 		else nameZip = 'full';*/
 
-        try {
+		try {
 			const files = await downloadAndUnzip(url + `/${nameZip}.zip`);
 			if (files !== undefined && files.length > 0) {
-				let lastTolk = JSON.parse(localStorage.getItem('lastTolk'));
-				let lastPoem = JSON.parse(localStorage.getItem('lastPoem'));
+				let lastTolk = JSON.parse(localStorage.getItem('olnvjs_lastTolk'));
+				let lastPoem = JSON.parse(localStorage.getItem('olnvjs_lastPoem'));
 				const lastTolkStore = lastTolk;
 				const lastPoemStore = lastPoem;
 
@@ -124,8 +154,8 @@ async function fillInfos(serviceDwld, serviceData, url, app, isAwait) {
 					console.log(`Загружено ${counter} материалов`);
 
 					// кэшируем основные данные последнего Катрена и Послания
-					if (lastPoem) localStorage.setItem('lastPoem', JSON.stringify(lastPoem));
-					if (lastTolk) localStorage.setItem('lastTolk', JSON.stringify(lastTolk));
+					if (lastPoem) localStorage.setItem('olnvjs_lastPoem', JSON.stringify(lastPoem));
+					if (lastTolk) localStorage.setItem('olnvjs_lastTolk', JSON.stringify(lastTolk));
 
 					if (!isAwait) // serviceData === undefined
 						app.router.navigateToPath(app.getPath(location.href));
@@ -145,7 +175,11 @@ async function fillInfos(serviceDwld, serviceData, url, app, isAwait) {
 			}
 		} catch (e) {
 			console.error(e);
-        }
+		}
+	}
+	else if (serviceData !== undefined && lastDateChange < lastDateChangeStore) {
+		// на текущем сервере давно не обновлялись архивы данных
+		console.log(`На сервере ${url} давно не обновлялись данные. Необходимо сообщить об этом администратору!`);
 	}
 
 	return res;
@@ -318,6 +352,8 @@ async function download(url) {
 			return data;
 		}
 	} catch (error) {
-		console.error(`Ошибка при скачивании ${url}:`, error);
+		if (error.message === 'Failed to fetch')
+			console.log(`Ресурс ${url} недоступен:`, error.message);
+		else console.error(`Ошибка при скачивании ${url}:`, error);
 	}
 }

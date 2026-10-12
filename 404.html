@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="version" content="1.0.0-alpha4">
+    <meta name="version" content="1.0.0-alpha5">
     <base href="/olnv-js/" /> <!--  -->
     <meta name="description" content="Прямое обращение Высшего Космического Разума (Господа Бога, Отца Абсолюта) к человечеству. Книга, записанная Масловым Леонидом Ивановичем.">
     <meta name="author" content="Маслов Леонид Иванович">
@@ -85,6 +85,8 @@
                 <div class="row">
                     <!-- ЛЕВАЯ КОЛОНКА: календарь, поиск, регистрация -->
                     <div class="col-lg-3 col-md-3 col-sm-4 col-xs-12 large-monitor-left">
+
+                        <!--ПОИСК-->
                         <div class="razdel"><h2><span id="spinner-search" class="bi-spinner"></span>Поиск по Сайту</h2>
                             <form id="search" action="/">
                                 <div class="txt-blue">
@@ -113,7 +115,20 @@
                                 </div>
                             </form>
                             <div class="clear"></div>
-                        </div>                        
+                        </div>
+
+                        <!--Обновления-->
+                        <div class="razdel">
+                            <h2><span id="spinner-updated" class="bi-spinner"></span>Обновления</h2>
+                            <div class="txt-blue lh-block">Последняя проверка: <span id="last-check" class="txt2 txt-gray"></span></div>
+                            <div class="txt-blue lh-block">Последнее обновление: <span id="last-updated" class="txt2 txt-gray" title="Время последнего получения новой информации"></span></div>
+                            <br />
+                            <div class="txt-blue registration-link">
+                                <button type="button" class="btn btn-primary style-select" title="Проверить наличие новой информации">Проверить</button>
+                            </div>
+                        </div>
+                        <div class="clear"></div>
+
                     </div>
 
                     <!--Центральная часть -->

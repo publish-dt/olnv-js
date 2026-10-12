@@ -50,6 +50,22 @@ class App {
 
 	async init() {
 
+		/** Заполняем блок Обновления */
+		const isLastCheckGood = JSON.parse(localStorage.getItem('olnvjs_isLastCheckGood'));
+
+		let lastCheck = localStorage.getItem('olnvjs_lastCheck');
+		if (lastCheck)
+			lastCheck = new Date(lastCheck.replace(/"/g, ''));
+
+		let lastUpdated = localStorage.getItem('olnvjs_lastUpdated');
+		if (lastUpdated)
+			lastUpdated = new Date(lastUpdated.replace(/"/g, ''));
+
+		this.stateContainer.updateInfo.isLastCheckGood = isLastCheckGood;
+		this.stateContainer.updateInfo.lastCheck = lastCheck;
+		this.stateContainer.updateInfo.lastUpdated = lastUpdated;
+		this.buildBlockUpdate(isLastCheckGood, lastCheck, lastUpdated);
+
 		this.myDB.fillDb();
 		console.log(`В базе: ${await db.infos.count()} материалов`);
 
@@ -57,7 +73,8 @@ class App {
 		window.quoteBlockEl = document.getElementById('quote-block');
 		window.formEl = document.getElementById('search');
 
-		// получаем последнюю открытую пользователем страницу
+
+		/** получаем последнюю открытую пользователем страницу */
 		let pathChanged = false;
 		this.basePath = this.getPath(document.baseURI, true);
 		let path = this.getPath(location.href);
@@ -87,11 +104,21 @@ class App {
 		return path;
 	}
 
-
 	setHistory(state) {
 		if (state) { //  && state.path !== 'index' с этим, при переходе на главную, не меняет адресную строку
 			history.pushState(state, '', '/' + app.basePath + (state.path === 'index' ? '' : `${state.path}${!state.path.startsWith('search?') ? '.html' : ''}${state.hash ? '#' + state.hash : ''}`));
 		}
+	}
+
+	
+	buildBlockUpdate(isLastCheckGood, lastCheck, lastUpdated) {
+		const lastCheckEl = document.getElementById('last-check');
+		lastCheckEl.innerHTML = lastCheck ? toDateTime.format(lastCheck) : '--';
+		lastCheckEl.style.cssText = (!isLastCheckGood || false) ? 'color: peru !important;' : '';
+		lastCheckEl.title = (!isLastCheckGood || false) ? 'Неудачная проверка обновлений' : 'Время последней проверки по наличию новой информации';
+
+		const lastlastUpdatedEl = document.getElementById('last-updated');
+		lastlastUpdatedEl.innerHTML = lastUpdated ? toDateTime.format(lastUpdated) : '--';
 	}
 }
 
@@ -150,6 +177,9 @@ window.onclick = async function (event) {
 				}
             }
 		}
+	}
+	else if (targetEl.type === "button") {
+		app.myDB.fillDb();
     }
 }
 

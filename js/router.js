@@ -51,8 +51,10 @@ class Router {
             // Это страница поиска
             else if (path.startsWith('search?')) {
                 const res = await this.app.search.renderSearch(path);
-                cnt = res.cnt;
-                documentTitle = res.title;
+                if (res) {
+                    cnt = res.cnt;
+                    documentTitle = res.title;
+                }
             }
             else {
 
@@ -65,7 +67,7 @@ class Router {
                     };
 
                     // Получение последнего Послания
-                    let lastTolkStore = JSON.parse(localStorage.getItem('lastTolk'));
+                    let lastTolkStore = JSON.parse(localStorage.getItem('olnvjs_lastTolk'));
                     const infoDict = lastTolkStore ? lastTolkStore :
                     await db.infos
                         .orderBy('Date')
@@ -85,7 +87,7 @@ class Router {
                     }
 
                     // Получение последнего Катрена
-                    let lastPoemStore = JSON.parse(localStorage.getItem('lastPoem'));
+                    let lastPoemStore = JSON.parse(localStorage.getItem('olnvjs_lastPoem'));
                     const infoPoems = lastPoemStore ? lastPoemStore :
                     await db.infos
                         .orderBy('Date')
@@ -353,7 +355,7 @@ class Router {
         }
 
         if (!info.Data.NoFooter)
-            cnt += `<p class="date-footer">${(new Date(info.Date)).toLocaleDateString("ru-RU", optShortDate)}</p>`;
+            cnt += `<p class="date-footer">${(toShortDate.format(new Date(info.Date)))}</p>`;
 
         return cnt;
     }
@@ -368,7 +370,7 @@ class Router {
             const title = route.Title ? route.Title : infos[0].Titles[0];
             res.title = title;
 
-            cnt += `<h1 class="page-title"><span class="date">${(new Date(info.Date)).toLocaleDateString("ru-RU", optShortDate)}</span> ${title}</h1>`;
+            cnt += `<h1 class="page-title"><span class="date">${(toShortDate.format(new Date(info.Date)))}</span> ${title}</h1>`;
 
             for (var j in infos) {
                 const info = infos[j];
@@ -385,7 +387,7 @@ class Router {
 
             }
             else
-                cnt += `</br><a href="#" onclick="if (confirm('Очистить базу данных?')) {db.delete();localStorage.clear();caches.delete('cnt');}">Настройки</a>`;
+                cnt += `</br><a href="#" onclick="clearAllData()">Настройки</a>`;
 
             if (route.ByLink && listDouble.length > 1) {
                 console.error(`Вместо одного найдено ${count} элемента! (${listDouble})`);

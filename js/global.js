@@ -1,3 +1,5 @@
+window.netOffline = undefined;
+
 window.onerror = function (message, url, line, col, error) {
 	alert(message + "\n В " + line + ":" + col + " на " + url);
 };
@@ -9,20 +11,6 @@ window.addEventListener('online', () => {
 window.addEventListener('offline', () => {
     window.netOffline = true;
 });
-
-const optShortDate = {
-    year: "2-digit",
-    month: "numeric",
-    day: "numeric",
-};
-
-/*window.onload = function () {
-
-}*/
-
-/*function handleImgLoad(el) {
-	debugger
-}*/
 
 function getDeclension(number, nominativ, genetiv, plural) {
     number = number % 100;
@@ -65,8 +53,38 @@ function anyToMoscow(date) {
     return new Date(date);
 }
 
+const toShortDate = new Intl.DateTimeFormat('ru-RU', {
+    year: "2-digit",
+    month: "numeric",
+    day: "numeric"
+});
+
+const toDateTime = new Intl.DateTimeFormat('ru-RU', {
+    day: 'numeric',
+    month: 'short',
+    hour: 'numeric',
+    minute: '2-digit'
+});
+
+
 function sleep(ms) {
     return new Promise(resolve => {
         setTimeout(resolve, ms);
     });
+}
+
+function clearAllData() {
+    if (confirm('Очистить базу данных?')) {
+        db.delete();
+
+        //localStorage.clear();
+        // Удаляем все ключи, начинающиеся с 'olnvjs_'
+        for (let key of Object.keys(localStorage)) {
+            if (key.startsWith('olnvjs_')) {
+                localStorage.removeItem(key);
+            }
+        }
+
+        caches.delete('cnt');
+    }
 }
