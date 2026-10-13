@@ -1,4 +1,4 @@
-window.verApp = '1.0.0-alpha6';
+window.verApp = '1.0.0-alpha7';
 window.netOffline = undefined;
 
 window.onerror = function (message, url, line, col, error) {
@@ -80,9 +80,22 @@ function sleep(ms) {
     });
 }
 
+function createDB(exists) {
+    
+    if (!exists) {
+        window.db = new Dexie('OtkDB');
+        db.version(1).stores({
+            infos: 'Id, Link, Data.Next, Catalog, Date',
+            quote: '++Number',
+            settings: 'name'
+        });
+        db.open();
+    }
+}
+
 function clearAllData() {
     if (confirm(`Очистить базу данных? (версия: ${window.verApp})`)) {
-        db.delete();
+        db.delete({ disableAutoOpen: false });
 
         //localStorage.clear();
         // Удаляем все ключи, начинающиеся с 'olnvjs_'

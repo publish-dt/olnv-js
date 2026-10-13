@@ -23,108 +23,124 @@ class Router {
             let lastDict = '';
             let lastPoem = '';
 
-            // получаем значение хэша/якоря
-            const arrPath = path.split('#');
-            if (arrPath.length > 1) hash = arrPath[1];
-            path = arrPath[0];
+            try {
+                // получаем значение хэша/якоря
+                const arrPath = path.split('#');
+                if (arrPath.length > 1) hash = arrPath[1];
+                path = arrPath[0];
 
-            // получаем настройки роутинга
-            let route = { ByLink: true };
-            for (var k in this.app.routes) {
-                if (this.app.routes[k].Route.includes(path)) {
-                    route = this.app.routes[k];
-                    break;
-                }
-            }
-
-            if (path.startsWith('cnt/')) {
-                const cachedResponse = await cache.match('/' + path);
-                if (cachedResponse) {
-                    const blob = await cachedResponse.blob();
-                    const base64 = await blobToBase64(blob);
-
-                    const imgCnt = `<img src="${base64}" style="display: block;-webkit-user-select: none;margin: auto;background-color: hsl(0, 0%, 90%);transition: background-color 300ms;">`;
-                    if (newTab) cnt = imgCnt;
-                    else document.body.innerHTML = imgCnt;
-                }
-            }
-            // Это страница поиска
-            else if (path.startsWith('search?')) {
-                const res = await this.app.search.renderSearch(path);
-                if (res) {
-                    cnt = res.cnt;
-                    documentTitle = res.title;
-                }
-            }
-            else {
-
-                // Это главная страница
-                if (path === 'index') {
-                    const options = {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                    };
-
-                    // Получение последнего Послания
-                    let lastTolkStore = JSON.parse(localStorage.getItem('olnvjs_lastTolk'));
-                    const infoDict = lastTolkStore ? lastTolkStore :
-                    await db.infos
-                        .orderBy('Date')
-                            .filter((info) => info.Catalog === this.app.catalogs.tolk)
-                        /*.where('Catalog')
-                        .equalsIgnoreCase('55d6a586b6b9a45a700f9eee')*/
-                        //.limit(1)
-                        //.desc()
-                        //.sortBy('Date');
-                        //.toArray();
-                        .last();
-
-                    //const infoDict = infosDict[0];
-                    if (infoDict) {
-                        const dateLastDict = strToDate(infoDict.Date);
-                        lastDict = `<a href='/${infoDict.Link}.html'>Последнее Послание</a> (от ${dateLastDict.toLocaleDateString("ru-RU", options)})`;
-                    }
-
-                    // Получение последнего Катрена
-                    let lastPoemStore = JSON.parse(localStorage.getItem('olnvjs_lastPoem'));
-                    const infoPoems = lastPoemStore ? lastPoemStore :
-                    await db.infos
-                        .orderBy('Date')
-                            .filter((info) => info.Catalog === this.app.catalogs.poems)
-                        /*.where('Catalog')
-                        .equalsIgnoreCase('570ef2fcd07cda3e16f93ef7')
-                        .desc()
-                        .sortBy('Date');*/
-                        .last();
-
-                    //const infoPoems = infosPoems[0];
-                    if (infoPoems) {
-                        const dateLastPoem = strToDate(infoPoems.Date);
-                        lastPoem = `<a href='/${infoPoems.Link}.html'>Последний Катрен</a> (от ${dateLastPoem.toLocaleDateString("ru-RU", options)})`;
+                // получаем настройки роутинга
+                let route = { ByLink: true };
+                for (var k in this.app.routes) {
+                    if (this.app.routes[k].Route.includes(path)) {
+                        route = this.app.routes[k];
+                        break;
                     }
                 }
 
-                posNext = path.indexOf('-next');
-                if (posNext !== -1) {
+                if (path.startsWith('cnt/')) {
+                    const cachedResponse = await cache.match('/' + path);
+                    if (cachedResponse) {
+                        const blob = await cachedResponse.blob();
+                        const base64 = await blobToBase64(blob);
 
-                    // Получение указанного материала для получения ссылки на следующий материал
-                    path = path.substring(0, posNext);
-
-                    const infos = await db['infos']
-                        .where('Link')
-                        .equalsIgnoreCase(path)
-                        .toArray();
-
-                    const info = infos[0];
-                    if (info.Data.Next) {
-                        isNext = true;
-                        prePage = path;
-                        path = info.Data.Next;
-                        console.log('Найден новый материал (при переходе к [*]): ' + path);
+                        const imgCnt = `<img src="${base64}" style="display: block;-webkit-user-select: none;margin: auto;background-color: hsl(0, 0%, 90%);transition: background-color 300ms;">`;
+                        if (newTab) cnt = imgCnt;
+                        else document.body.innerHTML = imgCnt;
                     }
-                    else { // нового материала ещё нет
+                }
+                // Это страница поиска
+                else if (path.startsWith('search?')) {
+                    const res = await this.app.search.renderSearch(path);
+                    if (res) {
+                        cnt = res.cnt;
+                        documentTitle = res.title;
+                    }
+                }
+                else {
 
+                    // Это главная страница
+                    if (path === 'index') {
+                        const options = {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                        };
+
+                        // Получение последнего Послания
+                        let lastTolkStore = JSON.parse(localStorage.getItem('olnvjs_lastTolk'));
+                        const infoDict = lastTolkStore ? lastTolkStore :
+                        await db.infos
+                            .orderBy('Date')
+                                .filter((info) => info.Catalog === this.app.catalogs.tolk)
+                            /*.where('Catalog')
+                            .equalsIgnoreCase('55d6a586b6b9a45a700f9eee')*/
+                            //.limit(1)
+                            //.desc()
+                            //.sortBy('Date');
+                            //.toArray();
+                            .last();
+
+                        //const infoDict = infosDict[0];
+                        if (infoDict) {
+                            const dateLastDict = strToDate(infoDict.Date);
+                            lastDict = `<a href='/${infoDict.Link}.html'>Последнее Послание</a> (от ${dateLastDict.toLocaleDateString("ru-RU", options)})`;
+                        }
+
+                        // Получение последнего Катрена
+                        let lastPoemStore = JSON.parse(localStorage.getItem('olnvjs_lastPoem'));
+                        const infoPoems = lastPoemStore ? lastPoemStore :
+                        await db.infos
+                            .orderBy('Date')
+                                .filter((info) => info.Catalog === this.app.catalogs.poems)
+                            /*.where('Catalog')
+                            .equalsIgnoreCase('570ef2fcd07cda3e16f93ef7')
+                            .desc()
+                            .sortBy('Date');*/
+                            .last();
+
+                        //const infoPoems = infosPoems[0];
+                        if (infoPoems) {
+                            const dateLastPoem = strToDate(infoPoems.Date);
+                            lastPoem = `<a href='/${infoPoems.Link}.html'>Последний Катрен</a> (от ${dateLastPoem.toLocaleDateString("ru-RU", options)})`;
+                        }
+                    }
+
+                    posNext = path.indexOf('-next');
+                    if (posNext !== -1) {
+
+                        // Получение указанного материала для получения ссылки на следующий материал
+                        path = path.substring(0, posNext);
+
+                        const infos = await db['infos']
+                            .where('Link')
+                            .equalsIgnoreCase(path)
+                            .toArray();
+
+                        const info = infos[0];
+                        if (info.Data.Next) {
+                            isNext = true;
+                            prePage = path;
+                            path = info.Data.Next;
+                            console.log('Найден новый материал (при переходе к [*]): ' + path);
+                        }
+                        else { // нового материала ещё нет
+
+                            // Получение ссылки на предыдущий материал
+                            await db['infos']
+                                .where('Data.Next')
+                                .equalsIgnoreCase(path)
+                                .each((info) => {
+                                    prePage = info.Link;
+                                });
+
+                            //cnt = await this.renderContent(info, cnt, prePage, lastDict, lastPoem);
+                            const res = await this.renderView(path, infos, cnt, prePage, lastDict, lastPoem, route);
+                            cnt = res.cnt;
+                            state.title = res.title;
+                        }
+                    }
+                    else {
                         // Получение ссылки на предыдущий материал
                         await db['infos']
                             .where('Data.Next')
@@ -132,75 +148,67 @@ class Router {
                             .each((info) => {
                                 prePage = info.Link;
                             });
-
-                        //cnt = await this.renderContent(info, cnt, prePage, lastDict, lastPoem);
-                        const res = await this.renderView(path, infos, cnt, prePage, lastDict, lastPoem, route);
-                        cnt = res.cnt;
-                        state.title = res.title;
-                    }
-                }
-                else {
-                    // Получение ссылки на предыдущий материал
-                    await db['infos']
-                        .where('Data.Next')
-                        .equalsIgnoreCase(path)
-                        .each((info) => {
-                            prePage = info.Link;
-                        });
-                }
-
-                // Получение указанного или нового материала
-                if (isNext || posNext === -1) {
-
-                    let routeBy = route.ByLink ? 'Link' : 'Catalog';
-                    let routeVal = route.ByLink ? path : route.Catalogs[0];
-                    /*if (path === 'novosti') {
-                        routeBy = 'Catalog';
-                        routeVal = this.app.catalogs.notices;
-                        infoIsList = true;
-                    }*/
-
-                    let coll = db['infos']
-                        .where(routeBy)
-                        .equalsIgnoreCase(routeVal);
-                        //.filter((info) => regexp.test(info.Link))
-                        /*.desc()
-                        .sortBy('Date');*/
-                        //.toArray();
-                        //.and((info) => regexp.test(info.Link))
-                        /*.each(async (info) => {
-                        });*/
-
-                    if (route.ParamView && route.ParamView[0]) coll = coll;
-                    else coll = coll.desc();
-
-                    const infos = !route.ByLink ? await coll.sortBy('Date') : await coll.toArray();
-
-                    if (location.pathname.endsWith('search')) {
-                        if (targetEl.dataset.msuPagesearch && (new Boolean(targetEl.dataset.msuPagesearch))) modelSearch = this.app.stateContainer.modelSearch;
-                        else this.app.stateContainer.modelSearch = {};
                     }
 
-                    let res;
-                    if (route.View)
-                        res = await this.app.views[`render${route.View}`](route, infos);
-                    else
-                        res = await this.renderView(path, infos, cnt, prePage, lastDict, lastPoem, route, modelSearch);
+                    // Получение указанного или нового материала
+                    if (isNext || posNext === -1) {
 
-                    if (res) {
-                        cnt = res.cnt;
-                        state.title = res.title;
-                        documentTitle = res.title;
+                        let routeBy = route.ByLink ? 'Link' : 'Catalog';
+                        let routeVal = route.ByLink ? path : route.Catalogs[0];
+                        /*if (path === 'novosti') {
+                            routeBy = 'Catalog';
+                            routeVal = this.app.catalogs.notices;
+                            infoIsList = true;
+                        }*/
+
+                        let coll = db['infos']
+                            .where(routeBy)
+                            .equalsIgnoreCase(routeVal);
+                            //.filter((info) => regexp.test(info.Link))
+                            /*.desc()
+                            .sortBy('Date');*/
+                            //.toArray();
+                            //.and((info) => regexp.test(info.Link))
+                            /*.each(async (info) => {
+                            });*/
+
+                        if (route.ParamView && route.ParamView[0]) coll = coll;
+                        else coll = coll.desc();
+
+                        const infos = !route.ByLink ? await coll.sortBy('Date') : await coll.toArray();
+
+                        if (location.pathname.endsWith('search')) {
+                            if (targetEl.dataset.msuPagesearch && (new Boolean(targetEl.dataset.msuPagesearch))) modelSearch = this.app.stateContainer.modelSearch;
+                            else this.app.stateContainer.modelSearch = {};
+                        }
+
+                        let res;
+                        if (route.View)
+                            res = await this.app.views[`render${route.View}`](route, infos);
+                        else
+                            res = await this.renderView(path, infos, cnt, prePage, lastDict, lastPoem, route, modelSearch);
+
+                        if (res) {
+                            cnt = res.cnt;
+                            state.title = res.title;
+                            documentTitle = res.title;
+                        }
                     }
                 }
+            } catch (e) {
+
             }
         }
 
-        const settings = await db.settings.get('serviceData'); //undefined;
+        let settings;
+        try {
+            settings = await db.settings.get('serviceData'); //undefined;
+        } catch (e) {
+
+        }
         let cntIsSet = false;
         if (cnt === '') {
-            //settings = await db.settings.get('serviceData');
-            if (settings !== undefined)
+            if (!this.app.stateContainer.updateInfo.updateStarted/*settings !== undefined*/)
                 cnt = '<p style="color: red">Информация не найдена!</p>';
         }
         else cntIsSet = true;
@@ -306,7 +314,8 @@ class Router {
             }
         }
 
-        if (settings !== undefined && !newTab) mainContEl.innerHTML = cnt;
+        if (!this.app.stateContainer.updateInfo.updateStarted/*settings !== undefined*/ && !newTab)
+            mainContEl.innerHTML = cnt;
 
         state.path = path;
         state.hash = hash;

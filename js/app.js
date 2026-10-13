@@ -78,12 +78,16 @@ class App {
 		this.stateContainer.updateInfo.lastUpdated = lastUpdated;
 		this.buildBlockUpdate(isLastCheckGood, lastCheck, lastUpdated);
 
-		this.myDB.fillDb();
-		console.log(`В базе: ${await db.infos.count()} материалов`);
-
 		window.mainContEl = document.getElementById('main-cont');
 		window.quoteBlockEl = document.getElementById('quote-block');
 		window.formEl = document.getElementById('search');
+		window.percentUpdatedEl = document.getElementById('percent-updated');
+
+		const isExist = await Dexie.exists('OtkDB');
+		if (!isExist)
+			createDB();
+
+		this.myDB.fillDb();
 
 
 		/** получаем последнюю открытую пользователем страницу */
@@ -118,7 +122,7 @@ class App {
 
 	setHistory(state) {
 		if (state) { //  && state.path !== 'index' с этим, при переходе на главную, не меняет адресную строку
-			history.pushState(state, '', '/' + app.basePath + (state.path === 'index' ? '' : `${state.path}${!state.path.startsWith('search?') ? '.html' : ''}${state.hash ? '#' + state.hash : ''}`));
+			history.pushState(state, '', '/' + this.basePath + (state.path === 'index' ? '' : `${state.path}${!state.path.startsWith('search?') ? '.html' : ''}${state.hash ? '#' + state.hash : ''}`));
 		}
 	}
 
@@ -134,12 +138,18 @@ class App {
 	}
 }
 
-window.db = new Dexie('OtkDB');
+const app = new App();
+Dexie.exists('OtkDB').then(function (exists) {
+	createDB();
+
+	app.init();
+});/**/
+/*window.db = new Dexie('OtkDB');
 db.version(1).stores({
 	infos: 'Id, Link, Data.Next, Catalog, Date',
 	quote: '++Number',
 	settings: 'name' 
-});
+});*/
 
 window.dbApp = new Dexie('OtkApp');
 dbApp.version(1).stores({
@@ -150,14 +160,11 @@ caches.open('cnt')
 	.then(cache => window.cache = cache);
 
 
-const app = new App();
-app.init();
-
 window.onclick = async function (event) {
 	let targetEl = event.target;
 	let url = event.target.href;
 	// элемент, по которому кликнули может не являться ссылкой
-	if (!url && event.target.parentElement.href) {
+	if (!url && event.target.parentElement && event.target.parentElement.href) {
 		url = event.target.parentElement.href;
 		targetEl = event.target.parentElement;
 	}

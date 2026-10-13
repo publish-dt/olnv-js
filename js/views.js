@@ -140,8 +140,8 @@ class Views {
             }
         }
         if (linkNext) {
-            cnt += `<img src="/img/star.gif" height="15" hspace="10" width="15">
-                <a href="/${linkNext}${postfixSeries}" class="blue-link-pagination">Следующая</a>`;
+            cnt += `<img src="img/star.gif" height="15" hspace="10" width="15">
+                <a href="${linkNext}${postfixSeries}" class="blue-link-pagination">Следующая</a>`;
             if (info && !info.Data.Next) {
                 cnt += '<span id="label-next" title="Следующей страницы ещё может не быть"> [*]</span><span id="spinner-next" class="bi-spinner"></span>';
             }

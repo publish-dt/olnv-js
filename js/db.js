@@ -8,28 +8,30 @@ class DB {
 	}
 
 	async fillDb(isAwait) {
-		
+
 		if (this.app.stateContainer.updateInfo.updateStarted)
 			return; // если загрузка архивов данных уже началась, то не запускаем её ещё раз
+
+		this.app.stateContainer.updateInfo.updateStarted = true;
 
 		const spinnerUpdatedEl = document.getElementById('spinner-updated');
 		spinnerUpdatedEl.style.display = 'inline-block';
 
 		const lastCheck = new Date();
 
-		this.app.stateContainer.updateInfo.updateStarted = true;
-
 
 		// 'https://cors-anywhere.herokuapp.com/https://otk-data.web.app'    http://otk-data.website.yandexcloud.net
-		const url = 'https://publish-dt.github.io/otk-data/exp'; // 'data'; // 'https://otk-data.pages.dev'; // 
+		const url = 'data'; // 'https://otk-data.pages.dev'; // 'https://publish-dt.github.io/otk-data/exp'; // 
 
 		let isLastCheckGood;
 		let lastUpdated;
 		const serviceDwld = await download(url + '/service.json');
 		if (serviceDwld) {
+			const isExist = await Dexie.exists('OtkDB');
+			if (!isExist) createDB();
 			const serviceData = await db.settings.get('serviceData');
 
-			const res = await fillInfos(serviceDwld, serviceData, url, this.app, isAwait);
+			const res = await fillInfos(serviceDwld, serviceData, url, this.app);
 			await fillFiles(serviceDwld, serviceData, url, this.app);
 			await fillQuote(serviceDwld, serviceData, url, this.app);
 
@@ -66,10 +68,16 @@ class DB {
 		if (isLastCheckGood !== undefined) localStorage.setItem('olnvjs_isLastCheckGood', JSON.stringify(isLastCheckGood));
 
 		this.app.stateContainer.updateInfo.updateStarted = false;
+
+
+		if (!isAwait && lastUpdated !== undefined)
+			this.app.router.navigateToPath(this.app.getPath(location.href));
+
+		console.log(`В базе: ${db ? await db.infos.count() : 0} материалов`);
 	}
 }
 
-async function fillInfos(serviceDwld, serviceData, url, app, isAwait) {
+async function fillInfos(serviceDwld, serviceData, url, app) {
 	const res = {};
 
 	const lastDateChange = strToDate(serviceDwld.LastDateChange);
@@ -101,9 +109,14 @@ async function fillInfos(serviceDwld, serviceData, url, app, isAwait) {
 					let jsonString = undefined;
 					//const toDelete = [];
 					const arrData = file.content.split('\n');
+					const totalCount = arrData.length;
+					let percent = 0;
 					for (var i in arrData) {
+                        if (i % 100 === 0) {
+							percent = i * 100 / totalCount;
+							percentUpdatedEl.innerHTML = ` - ${Math.trunc(percent)}%`;
+                        }
 						try {
-
 							jsonString = arrData[i];
 							if (jsonString !== "") {
 								const obj = JSON.parse(jsonString);
@@ -152,13 +165,11 @@ async function fillInfos(serviceDwld, serviceData, url, app, isAwait) {
 						}
 					}
 					console.log(`Загружено ${counter} материалов`);
+					percentUpdatedEl.innerHTML = '';
 
 					// кэшируем основные данные последнего Катрена и Послания
 					if (lastPoem) localStorage.setItem('olnvjs_lastPoem', JSON.stringify(lastPoem));
 					if (lastTolk) localStorage.setItem('olnvjs_lastTolk', JSON.stringify(lastTolk));
-
-					if (!isAwait) // serviceData === undefined
-						app.router.navigateToPath(app.getPath(location.href));
 
 					res.numberNewData = numberNewData;
 					res.numberChangeData = numberChangeData;
@@ -179,7 +190,7 @@ async function fillInfos(serviceDwld, serviceData, url, app, isAwait) {
 	}
 	else if (serviceData !== undefined && lastDateChange < lastDateChangeStore) {
 		// на текущем сервере давно не обновлялись архивы данных
-		console.log(`На сервере ${url} давно не обновлялись данные. Необходимо сообщить об этом администратору по электронной почте: webmaster@otkroveniya.info`);
+		console.log(`На сервере ${url} давно не обновлялись данные. Необходимо сообщить об этом администратору!`);
 	}
 
 	return res;
