@@ -33,7 +33,7 @@ class App {
 		];
 		this.routes = [
 			{
-				//Name: "ОБЪЯВЛЕНИЯ",
+				Name: "Объявления",
 				//ToMenu: true,
 				Catalogs: [
 					this.catalogs.notices
@@ -43,7 +43,7 @@ class App {
 				Title: "Новости и объявления"
 			},
 			{
-				//Name: "Откровения",
+				Name: "Откровения",
 				//ToMenu: true,
 				View: "InfoList",
 				Catalogs: [
@@ -55,7 +55,7 @@ class App {
 				ParamView: [ true ]
 			},
 			{
-				//Name: "Толкования",
+				Name: "Толкования",
 				//ToMenu: true,
 				View: "InfoList",
 				Catalogs: [
@@ -67,15 +67,27 @@ class App {
 				ParamView: [true]
 			},
 			{
-				//Name: "Новые тексты",
+				Name: "Новые тексты",
 				//ToMenu: true,
 				View: "InfoList",
 				Catalogs: [
 					this.catalogs.tolk
 				],
 				ByLink: false,
-				Route: ["year"],
+				Route: ["year", "{year:int}"],
 				Title: "Послания за ",
+				ParamView: [true, 'year']
+			},
+			{
+				Name: "Катрены",
+				//ToMenu: true,
+				View: "InfoList",
+				Catalogs: [
+					this.catalogs.poems
+				],
+				ByLink: false,
+				Route: ["poems/year", "{year:int}"],
+				Title: "Катрены из Откровений за ",
 				ParamView: [true, 'year']
 			}
 		];

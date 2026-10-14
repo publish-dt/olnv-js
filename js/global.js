@@ -1,17 +1,47 @@
-window.verApp = '1.0.0-alpha8';
+window.verApp = '1.0.0-alpha9';
 window.netOffline = undefined;
 
 window.onerror = function (message, url, line, col, error) {
 	alert(message + "\n В " + line + ":" + col + " на " + url);
 };
 
-window.addEventListener('online', () => {
-    window.netOffline = false;
-});
 
-window.addEventListener('offline', () => {
-    window.netOffline = true;
+/** Проверка доступности Интернета */
+window.addEventListener('online', () => {
+    intOnline();
 });
+window.addEventListener('offline', () => {
+    intOffline();
+});
+async function checkInternet() {
+    try {
+        const response = await fetch('https://api.browser.yandex.ru/generate_204', {
+            method: 'HEAD',
+            cache: 'no-store',
+        });
+        return response.ok; // 204 → true
+    } catch {
+        return false;
+    }
+}
+const check = async () => {
+    const online = await checkInternet();
+    if (online) intOnline();
+    else intOffline();
+};
+function intOnline() {
+    window.netOffline = false;
+    const internetLostEl = document.getElementById('internet-lost');
+    internetLostEl.style.display = 'none';
+}
+function intOffline() {
+    window.netOffline = true;
+    const internetLostEl = document.getElementById('internet-lost');
+    internetLostEl.style.display = 'block';
+}
+check();
+setInterval(check, 30000);
+
 
 function getDeclension(number, nominativ, genetiv, plural) {
     number = number % 100;

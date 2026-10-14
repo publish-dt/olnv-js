@@ -6,8 +6,9 @@ class Views {
 		this.app = app;
 	}
 
-    renderInfoList(route, infos, query, yearFilter) {
+    renderInfoList(route, infos, query, params) {
         const res = {};
+        const yearFilter = params.year;
         const title = route.Title + (yearFilter ? `${yearFilter} год` : '');
 
         const isTolk = route.Route.includes('tolkovaniya');
@@ -19,20 +20,27 @@ class Views {
         `;
 
         /** Группировка по месяцам или годам */
-        const grouped = infos.reduce((acc, info) => {
+        const grouped = {};
+        //const grouped = infos.reduce((acc, info) => {
+        for (var x in infos) {
+            const info = infos[x];
             const date = strToDate(info.Date);
             const year = date.getFullYear();
-            const groupName = isTolk ? (info.Link === '2004/31.12.04' ? 2005 : year) : date.getMonth();
-            if (!acc[groupName]) {
-                acc[groupName] = [];
+            const groupName = '_'+(isTolk ? (info.Link === '2004/31.12.04' ? 2005 : year) : date.getMonth());
+
+            //grouped.set(groupName, info);
+            if (!grouped[groupName]) {
+                grouped[groupName] = [];
             }
-            acc[groupName].push(info);
-            return acc;
-        }, {});
+            grouped[groupName].push(info); // unshift
+            //return acc;
+        //}, {});
+        }
 
 
-        for (var i in grouped) {
-            const group = grouped[i];
+        for (var key in grouped) {
+            const group = grouped[key];
+            const i = Number(key.slice(1));
             if (group.length > 0) {
                 let counter = 0;
                 let iColumn = 1;
@@ -53,15 +61,15 @@ class Views {
                     const info = group[j];
                     const num = strToDate(info.Date).getDate();
                     const number = ('0' + num).slice(-2);
-                    const prefix = !isTolk ? (preDay === num ? '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' : number + ': ') : '';
-
                     for (var k in info.Titles) {
                         const itemTitle = info.Titles[k];
                         const nameEl = itemTitle.replace("<nobr>", "").replace("</nobr>", "");
 
+                        const prefix = !isTolk ? (preDay === num ? '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' : number + ': ') : '';
+                        preDay = num;
+
                         cnt += `<a href="${info.Link}.html">${prefix}${nameEl}</a><br />`;
 
-                        preDay = num;
                         counter++;
 
                         /** Перенос в следующую колонку */
@@ -78,14 +86,10 @@ class Views {
         }
         cnt += '</div>';
 
-        const queryParams = {};
-        const queryArr = query.substring(query.indexOf('?') + 1).split('&');
-        for (const key in queryArr) {
-            const data = queryArr[key].split('=');
-            queryParams[data[0]] = data[1];
-        }
-        /*res = this.renderPagination(queryParams, '', '.html', Number(queryParams['PageIndex']), 2004, 2016, 14, "Послания за ", ', ', 'год', true);
-        cnt += res.cnt;*/
+        const lastNumber = 2016;
+        const curPosition = yearFilter;
+        const resPag = this.renderPagination({}, '', '.html', curPosition, 2004, lastNumber, 0, "Послания за ", ', ', 'год', true);
+        cnt += resPag.cnt;
 
         cnt += this.renderFooter(undefined, '', '', '');
 
@@ -97,6 +101,9 @@ class Views {
 
     renderPagination(queryParams, prefixPath, suffixPath, curPosition, firstNumber, lastNumber, maxPaginSeries, prefixSeries, betweenSeries, postfixSeries, numberAsPath, typeContent, paginTpl) {
         let renderPagination = "";
+        let prePage;
+        let nextPage;
+
 
         //const entries = Object.keys(queryParams).map(key => [key, queryParams[key]]);
         const paramsArr = [];
@@ -120,9 +127,6 @@ class Views {
         const countLeft = max > 0 && (pagesCount - curPage) <= leftOfCur ? max - 1 - (pagesCount - curPage) : leftOfCur - 1;
         const countRight = max > 0 && max - curPage >= rightOfCur ? max + 1 - curPage : rightOfCur;
 
-        let prePage;
-        let nextPage;
-
         renderPagination += `
             <div class='pagin' >
                 ${ prefixSeries }`;
@@ -131,7 +135,7 @@ class Views {
             const number = baseNumber + i;
             if (max == 0 || (i >= curPage - countLeft && i < (curPage + countRight)) || i == 1 || i == pagesCount) {
                 if (curPosition !== number) {
-                    var path = prefixPath + (numberAsPath ? number : "") + suffixPath + (query && !numberAsPath ? `${query}&PageIndex=${number}` : "");
+                    var path = prefixPath + (numberAsPath ? (number === 2004 ? 'otkroveniya' : (number === lastNumber ? 'year' : number)) : "") + suffixPath + (query && !numberAsPath ? `${query}&PageIndex=${number}` : "");
 
                     if (curPosition - 1 === number) prePage = path;
                     if (curPosition + 1 === number) nextPage = path;
@@ -150,7 +154,7 @@ class Views {
         ${ postfixSeries }
             </div>`;
 
-
+            
         const cnt = renderPagination;
 
         return { cnt: cnt, prePage: prePage, nextPage: nextPage };

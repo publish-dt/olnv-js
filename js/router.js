@@ -28,11 +28,33 @@ class Router {
                 const arrPath = path.split('#');
                 if (arrPath.length > 1) hash = arrPath[1];
                 path = arrPath[0];
-
+                
                 // получаем настройки роутинга
+                let params = {};
                 let route = { ByLink: true };
                 for (var k in this.app.routes) {
                     if (this.app.routes[k].Route.includes(path)) {
+                        route = this.app.routes[k];
+                        break;
+                    }
+                    for (var n in this.app.routes[k].Route) {
+                        const el = this.app.routes[k].Route[n];
+                        if (el.startsWith('{')) {
+                            const paramArr = el.slice(1, -1).split(':');
+                            const paramName = paramArr[0];
+                            const type = paramArr[1];
+                            switch (type) {
+                                case 'int':
+                                    const number = parseInt(path, 10);
+                                    if (!Number.isNaN(number))
+                                        params[paramName] = number;
+                                    break;
+                                default:
+                            }
+                            if (Object.keys(params).length > 0) break;
+                        }
+                    }
+                    if (Object.keys(params).length > 0) {
                         route = this.app.routes[k];
                         break;
                     }
@@ -59,7 +81,7 @@ class Router {
                 }
                 else {
 
-                    // Получение последнего Послания
+                    /** Получение последнего Послания */
                     let lastTolkStore = JSON.parse(localStorage.getItem('olnvjs_lastTolk'));
                     const infoLastDict = lastTolkStore ? lastTolkStore :
                     await db.infos
@@ -73,7 +95,7 @@ class Router {
                         //.toArray();
                         .last();
 
-                    // Получение последнего Катрена
+                    /** Получение последнего Катрена */
                     let lastPoemStore = JSON.parse(localStorage.getItem('olnvjs_lastPoem'));
                     const infoLastPoems = lastPoemStore ? lastPoemStore :
                     await db.infos
@@ -173,13 +195,16 @@ class Router {
                             /*.each(async (info) => {
                             });*/
 
-                        if (route.ParamView && route.ParamView[0]) coll = coll;
+                        const isLastYear = path.endsWith('year');
+                        if (!isLastYear && route.ParamView && route.ParamView[0]) coll = coll;
                         else coll = coll.desc();
-                        let yearFilter = path === 'otkroveniya' ? 2004 : undefined;
                         if (route.ParamView && route.ParamView.length > 1 && route.ParamView[1] === 'year') {
-                            yearFilter = strToDate(infoLastDict.Date).getFullYear();
+                            const isPoems = route.Catalogs.includes(this.app.catalogs.poems) ? true : (route.Catalogs.some(el => [this.app.catalogs.dict, this.app.catalogs.tolk].includes(el)) ? false : undefined);
+                            const yearFilter = isLastYear ? strToDate((isPoems ? infoLastPoems.Date : infoLastDict.Date)).getFullYear() : params.year;
+                            if (isLastYear) params.year = yearFilter;
                             coll = coll.and((info) => info.Date.includes(yearFilter));
                         }
+                        if (path === 'otkroveniya') params.year = 2004;
 
                         const infos = !route.ByLink ? await coll.sortBy('Date') : await coll.toArray();
 
@@ -190,7 +215,7 @@ class Router {
 
                         let res;
                         if (route.View)
-                            res = await this.app.views[`render${route.View}`](route, infos, path, yearFilter);
+                            res = await this.app.views[`render${route.View}`](route, infos, path, params);
                         else
                             res = await this.renderView(path, infos, cnt, prePage, lastDict, lastPoem, route, modelSearch);
 
@@ -202,7 +227,7 @@ class Router {
                     }
                 }
             } catch (e) {
-
+                console.error(e);
             }
         }
 
@@ -210,7 +235,7 @@ class Router {
         try {
             settings = await db.settings.get('serviceData'); //undefined;
         } catch (e) {
-
+            console.error(e);
         }
         let cntIsSet = false;
         if (cnt === '') {
@@ -320,7 +345,7 @@ class Router {
             }
         }
 
-        if (!this.app.stateContainer.updateInfo.updateStarted/*settings !== undefined*/ && !newTab)
+        if ((settings !== undefined || !this.app.stateContainer.updateInfo.updateStarted) && !newTab)
             mainContEl.innerHTML = cnt;
 
         state.path = path;
