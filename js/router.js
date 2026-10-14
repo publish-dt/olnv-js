@@ -59,6 +59,33 @@ class Router {
                 }
                 else {
 
+                    // Получение последнего Послания
+                    let lastTolkStore = JSON.parse(localStorage.getItem('olnvjs_lastTolk'));
+                    const infoLastDict = lastTolkStore ? lastTolkStore :
+                    await db.infos
+                        .orderBy('Date')
+                            .filter((info) => info.Catalog === this.app.catalogs.tolk)
+                        /*.where('Catalog')
+                        .equalsIgnoreCase('55d6a586b6b9a45a700f9eee')*/
+                        //.limit(1)
+                        //.desc()
+                        //.sortBy('Date');
+                        //.toArray();
+                        .last();
+
+                    // Получение последнего Катрена
+                    let lastPoemStore = JSON.parse(localStorage.getItem('olnvjs_lastPoem'));
+                    const infoLastPoems = lastPoemStore ? lastPoemStore :
+                    await db.infos
+                        .orderBy('Date')
+                            .filter((info) => info.Catalog === this.app.catalogs.poems)
+                        /*.where('Catalog')
+                        .equalsIgnoreCase('570ef2fcd07cda3e16f93ef7')
+                        .desc()
+                        .sortBy('Date');*/
+                        .last();
+
+
                     // Это главная страница
                     if (path === 'index') {
                         const options = {
@@ -67,42 +94,16 @@ class Router {
                             day: "numeric",
                         };
 
-                        // Получение последнего Послания
-                        let lastTolkStore = JSON.parse(localStorage.getItem('olnvjs_lastTolk'));
-                        const infoDict = lastTolkStore ? lastTolkStore :
-                        await db.infos
-                            .orderBy('Date')
-                                .filter((info) => info.Catalog === this.app.catalogs.tolk)
-                            /*.where('Catalog')
-                            .equalsIgnoreCase('55d6a586b6b9a45a700f9eee')*/
-                            //.limit(1)
-                            //.desc()
-                            //.sortBy('Date');
-                            //.toArray();
-                            .last();
-
-                        //const infoDict = infosDict[0];
-                        if (infoDict) {
-                            const dateLastDict = strToDate(infoDict.Date);
-                            lastDict = `<a href='/${infoDict.Link}.html'>Последнее Послание</a> (от ${dateLastDict.toLocaleDateString("ru-RU", options)})`;
+                        //const infoLastDict = infosDict[0];
+                        if (infoLastDict) {
+                            const dateLastDict = strToDate(infoLastDict.Date);
+                            lastDict = `<a href='/${infoLastDict.Link}.html'>Последнее Послание</a> (от ${dateLastDict.toLocaleDateString("ru-RU", options)})`;
                         }
 
-                        // Получение последнего Катрена
-                        let lastPoemStore = JSON.parse(localStorage.getItem('olnvjs_lastPoem'));
-                        const infoPoems = lastPoemStore ? lastPoemStore :
-                        await db.infos
-                            .orderBy('Date')
-                                .filter((info) => info.Catalog === this.app.catalogs.poems)
-                            /*.where('Catalog')
-                            .equalsIgnoreCase('570ef2fcd07cda3e16f93ef7')
-                            .desc()
-                            .sortBy('Date');*/
-                            .last();
-
-                        //const infoPoems = infosPoems[0];
-                        if (infoPoems) {
-                            const dateLastPoem = strToDate(infoPoems.Date);
-                            lastPoem = `<a href='/${infoPoems.Link}.html'>Последний Катрен</a> (от ${dateLastPoem.toLocaleDateString("ru-RU", options)})`;
+                        //const infoLastPoems = infosPoems[0];
+                        if (infoLastPoems) {
+                            const dateLastPoem = strToDate(infoLastPoems.Date);
+                            lastPoem = `<a href='/${infoLastPoems.Link}.html'>Последний Катрен</a> (от ${dateLastPoem.toLocaleDateString("ru-RU", options)})`;
                         }
                     }
 
@@ -174,6 +175,11 @@ class Router {
 
                         if (route.ParamView && route.ParamView[0]) coll = coll;
                         else coll = coll.desc();
+                        let yearFilter = path === 'otkroveniya' ? 2004 : undefined;
+                        if (route.ParamView && route.ParamView.length > 1 && route.ParamView[1] === 'year') {
+                            yearFilter = strToDate(infoLastDict.Date).getFullYear();
+                            coll = coll.and((info) => info.Date.includes(yearFilter));
+                        }
 
                         const infos = !route.ByLink ? await coll.sortBy('Date') : await coll.toArray();
 
@@ -184,7 +190,7 @@ class Router {
 
                         let res;
                         if (route.View)
-                            res = await this.app.views[`render${route.View}`](route, infos);
+                            res = await this.app.views[`render${route.View}`](route, infos, path, yearFilter);
                         else
                             res = await this.renderView(path, infos, cnt, prePage, lastDict, lastPoem, route, modelSearch);
 

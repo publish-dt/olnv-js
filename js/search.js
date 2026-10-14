@@ -14,12 +14,6 @@ class Search {
         for (const key in queryArr) {
             const data = queryArr[key].split('=');
             queryParams[data[0]] = data[1];
-            /*if (queryArr[key].startsWith('SearchString=')) {
-                queryParams['SearchString'] = queryArr[key].split('=')[1];
-            }
-            else if (queryArr[key].startsWith('Where=')) {
-                queryParams['Where'] = queryArr[key].split('=')[1];
-            }*/
         }
         let searchString = queryParams['SearchString'];
         const where = queryParams['Where'] || 'Site';

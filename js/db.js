@@ -21,10 +21,11 @@ class DB {
 
 
 		// 'https://cors-anywhere.herokuapp.com/https://otk-data.web.app'    http://otk-data.website.yandexcloud.net
-		const url = 'data'; // 'https://otk-data.pages.dev'; // 'https://publish-dt.github.io/otk-data/exp'; // 
+		const url = 'https://publish-dt.github.io/otk-data/exp'; // 'data'; // 'https://otk-data.pages.dev'; // 
 
 		let isLastCheckGood;
 		let lastUpdated;
+		let isUpdated = false;
 		const serviceDwld = await download(url + '/service.json');
 		if (serviceDwld) {
 			const isExist = await Dexie.exists('OtkDB');
@@ -44,6 +45,7 @@ class DB {
 				lastUpdated = lastCheck;
 				this.app.stateContainer.updateInfo.lastUpdated = lastUpdated;
 				if (lastUpdated) localStorage.setItem('olnvjs_lastUpdated', JSON.stringify(lastUpdated));
+				isUpdated = true;
 			}
 		}
 		else {
@@ -70,7 +72,7 @@ class DB {
 		this.app.stateContainer.updateInfo.updateStarted = false;
 
 
-		if (!isAwait && lastUpdated !== undefined)
+		if (!isAwait && isUpdated)
 			this.app.router.navigateToPath(this.app.getPath(location.href));
 
 		console.log(`В базе: ${db ? await db.infos.count() : 0} материалов`);

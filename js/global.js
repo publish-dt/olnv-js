@@ -1,4 +1,4 @@
-window.verApp = '1.0.0-alpha7';
+window.verApp = '1.0.0-alpha8';
 window.netOffline = undefined;
 
 window.onerror = function (message, url, line, col, error) {
@@ -53,6 +53,27 @@ function intToRoman(num) {
 function getMonthName(monthIndex) {
     const months = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
     return months[monthIndex];
+}
+
+function intToRoman(num) {
+    // Массив пар отсортирован от большего к меньшему
+    const romanMap = [
+        [1000, "M"], [900, "CM"], [500, "D"], [400, "CD"],
+        [100, "C"], [90, "XC"], [50, "L"], [40, "XL"],
+        [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"]
+    ];
+
+    let result = "";
+
+    for (const [value, symbol] of romanMap) {
+        // Пока текущее число больше или равно значению из пары
+        while (num >= value) {
+            result += symbol; // Добавляем символ к результату
+            num -= value;     // Вычитаем значение из числа
+        }
+    }
+
+    return result;
 }
 
 function strToDate(date) {

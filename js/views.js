@@ -6,17 +6,23 @@ class Views {
 		this.app = app;
 	}
 
-    renderInfoList(route, infos) {
+    renderInfoList(route, infos, query, yearFilter) {
         const res = {};
-        const title = route.Title;
+        const title = route.Title + (yearFilter ? `${yearFilter} год` : '');
+
+        const isTolk = route.Route.includes('tolkovaniya');
+        const maxColumn = isTolk ? 2 : 1;
+        const numCol = 12 / maxColumn;
 
         let cnt = `<h1 class="page-title">${title}</h1>
             <div class="container-fluid">
         `;
 
+        /** Группировка по месяцам или годам */
         const grouped = infos.reduce((acc, info) => {
             const date = strToDate(info.Date);
-            const groupName = getMonthName(date.getMonth()) + ` ${date.getFullYear()} года`;
+            const year = date.getFullYear();
+            const groupName = isTolk ? (info.Link === '2004/31.12.04' ? 2005 : year) : date.getMonth();
             if (!acc[groupName]) {
                 acc[groupName] = [];
             }
@@ -24,27 +30,47 @@ class Views {
             return acc;
         }, {});
 
+
         for (var i in grouped) {
             const group = grouped[i];
             if (group.length > 0) {
-                let preDay = 0;
+                let counter = 0;
+                let iColumn = 1;
+                const lengthAll = group.reduce((sum, item) => sum + item.Titles.length, 0);
+                //const lengthAll = group.length + countTitles;
+                const countBr = lengthAll > 30 ? Math.ceil((lengthAll / maxColumn)) : 0; // количество записей в списке при котором необходимо делать перенос на вторую колонку
+                const numbColumn = countBr > 0 ? maxColumn : 1;
 
-                cnt += `
-                    <div class="razdel row">
-                        <h2>${i}</h2>
-                        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 col-tolk">
-                `;
+                let preDay = 0;
+                const numbGroup = parseInt(i, 10);
+                const groupName = isTolk ? (`Книга ${intToRoman(numbGroup - 2000 - 3)}, ${i} год`) : (getMonthName(numbGroup) + ` ${yearFilter} года`);
+
+                cnt += '<div class="razdel row">';
+                if (!isTolk || (isTolk && numbGroup !== 2004)) cnt += `<h2>${groupName}</h2>`;
+                cnt += `<div class="col-lg-${numCol} col-md-${numCol} col-sm-12 col-xs-12 col-tolk">`;
 
                 for (var j in group) {
                     const info = group[j];
                     const num = strToDate(info.Date).getDate();
                     const number = ('0' + num).slice(-2);
+                    const prefix = !isTolk ? (preDay === num ? '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' : number + ': ') : '';
 
-                    cnt += `
-                        <a href="${info.Link}.html">${preDay === num ? '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' : number+': '}${info.Titles[0]}</a > <br />
-                    `;
+                    for (var k in info.Titles) {
+                        const itemTitle = info.Titles[k];
+                        const nameEl = itemTitle.replace("<nobr>", "").replace("</nobr>", "");
 
-                    preDay = num;
+                        cnt += `<a href="${info.Link}.html">${prefix}${nameEl}</a><br />`;
+
+                        preDay = num;
+                        counter++;
+
+                        /** Перенос в следующую колонку */
+                        if (countBr != 0 && counter % countBr == 0 && iColumn != numbColumn) {
+                            cnt += `</div><div class="col-lg-${numCol} col-md-${numCol} col-sm-12 col-xs-12 col-tolk">`;
+
+                            iColumn++;
+                        }
+                    }
                 }
 
                 cnt += '</div></div>';
@@ -52,7 +78,16 @@ class Views {
         }
         cnt += '</div>';
 
-        cnt += this.app.views.renderFooter(undefined, '', '', '');
+        const queryParams = {};
+        const queryArr = query.substring(query.indexOf('?') + 1).split('&');
+        for (const key in queryArr) {
+            const data = queryArr[key].split('=');
+            queryParams[data[0]] = data[1];
+        }
+        /*res = this.renderPagination(queryParams, '', '.html', Number(queryParams['PageIndex']), 2004, 2016, 14, "Послания за ", ', ', 'год', true);
+        cnt += res.cnt;*/
+
+        cnt += this.renderFooter(undefined, '', '', '');
 
         res.cnt = cnt;
         res.tite = title;
@@ -126,8 +161,8 @@ class Views {
         let cnt = '<div class="page-footer">';
 
         if (prePage && ((info && this.app.catalogsIsNext.includes(info.Catalog)) || !info)) {
-            cnt += `<a href="/${prePage}${postfixSeries}" class="blue-link-pagination">Предыдущая</a>
-                <img src="/img/star.gif" height="15" hspace="10" width="15">`
+            cnt += `<a href="${prePage}${postfixSeries}" class="blue-link-pagination">Предыдущая</a>
+                <img src="img/star.gif" height="15" hspace="10" width="15">`
         }
 
         cnt += `<button onclick="window.mainContEl.scrollIntoView();" class="btn-link blue-link-pagination">В начало страницы</button>`;

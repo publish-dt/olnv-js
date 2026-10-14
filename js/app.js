@@ -43,7 +43,7 @@ class App {
 				Title: "Новости и объявления"
 			},
 			{
-				Name: "Откровения",
+				//Name: "Откровения",
 				//ToMenu: true,
 				View: "InfoList",
 				Catalogs: [
@@ -51,8 +51,32 @@ class App {
 				],
 				ByLink: false,
 				Route: ["otkroveniya"],
-				Title: "Откровения",
+				Title: "Послания за ",
 				ParamView: [ true ]
+			},
+			{
+				//Name: "Толкования",
+				//ToMenu: true,
+				View: "InfoList",
+				Catalogs: [
+					this.catalogs.tolk
+				],
+				ByLink: false,
+				Route: ["tolkovaniya"],
+				Title: "Толкования Откровений",
+				ParamView: [true]
+			},
+			{
+				//Name: "Новые тексты",
+				//ToMenu: true,
+				View: "InfoList",
+				Catalogs: [
+					this.catalogs.tolk
+				],
+				ByLink: false,
+				Route: ["year"],
+				Title: "Послания за ",
+				ParamView: [true, 'year']
 			}
 		];
 
