@@ -1,4 +1,4 @@
-window.verApp = '1.0.0-alpha9';
+window.verApp = '1.0.0-alpha10';
 window.netOffline = undefined;
 
 window.onerror = function (message, url, line, col, error) {
@@ -106,17 +106,16 @@ function intToRoman(num) {
     return result;
 }
 
+/** Форматирование даты */
 function strToDate(date) {
     return new Date(date);
 }
-
 const toShortMoscowDate = new Intl.DateTimeFormat('ru-RU', {
     timeZone: 'Europe/Moscow',
     year: "2-digit",
     month: "numeric",
     day: "numeric"
 });
-
 const toDateTime = new Intl.DateTimeFormat('ru-RU', {
     day: 'numeric',
     month: 'short',

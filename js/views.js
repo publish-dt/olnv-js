@@ -6,10 +6,10 @@ class Views {
 		this.app = app;
 	}
 
-    renderInfoList(route, infos, query, params) {
+    renderInfoList(route, infos, path, params) {
         const res = {};
-        const yearFilter = params.year;
-        const title = route.Title + (yearFilter ? `${yearFilter} год` : '');
+        const isLastYear = path.endsWith('year');
+        const title = route.Title + (params.year ? `${params.year} год` : '');
 
         const isTolk = route.Route.includes('tolkovaniya');
         const maxColumn = isTolk ? 2 : 1;
@@ -21,20 +21,17 @@ class Views {
 
         /** Группировка по месяцам или годам */
         const grouped = {};
-        //const grouped = infos.reduce((acc, info) => {
         for (var x in infos) {
             const info = infos[x];
             const date = strToDate(info.Date);
             const year = date.getFullYear();
             const groupName = '_'+(isTolk ? (info.Link === '2004/31.12.04' ? 2005 : year) : date.getMonth());
 
-            //grouped.set(groupName, info);
             if (!grouped[groupName]) {
                 grouped[groupName] = [];
             }
-            grouped[groupName].push(info); // unshift
-            //return acc;
-        //}, {});
+            if (params.isPoems && params.isLastYear) grouped[groupName].unshift(info);
+            else grouped[groupName].push(info);
         }
 
 
@@ -51,7 +48,7 @@ class Views {
 
                 let preDay = 0;
                 const numbGroup = parseInt(i, 10);
-                const groupName = isTolk ? (`Книга ${intToRoman(numbGroup - 2000 - 3)}, ${i} год`) : (getMonthName(numbGroup) + ` ${yearFilter} года`);
+                const groupName = isTolk ? (`Книга ${intToRoman(numbGroup - 2000 - 3)}, ${i} год`) : (getMonthName(numbGroup) + ` ${params.year} года`);
 
                 cnt += '<div class="razdel row">';
                 if (!isTolk || (isTolk && numbGroup !== 2004)) cnt += `<h2>${groupName}</h2>`;
@@ -59,13 +56,14 @@ class Views {
 
                 for (var j in group) {
                     const info = group[j];
-                    const num = strToDate(info.Date).getDate();
+                    const date = strToDate(info.Date);
+                    const num = date.getDate();
                     const number = ('0' + num).slice(-2);
                     for (var k in info.Titles) {
                         const itemTitle = info.Titles[k];
-                        const nameEl = itemTitle.replace("<nobr>", "").replace("</nobr>", "");
+                        const nameEl = itemTitle.replace("<nobr>", "").replace("</nobr>", "") + (params.isPoems ? ` (от ${toShortMoscowDate.format(date)})` : '');
 
-                        const prefix = !isTolk ? (preDay === num ? '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' : number + ': ') : '';
+                        const prefix = !isTolk && !params.isPoems ? (preDay === num ? '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' : number + ': ') : '';
                         preDay = num;
 
                         cnt += `<a href="${info.Link}.html">${prefix}${nameEl}</a><br />`;
@@ -86,12 +84,17 @@ class Views {
         }
         cnt += '</div>';
 
-        const lastNumber = 2016;
-        const curPosition = yearFilter;
-        const resPag = this.renderPagination({}, '', '.html', curPosition, 2004, lastNumber, 0, "Послания за ", ', ', 'год', true);
-        cnt += resPag.cnt;
+        const lastNumber = params.lastYear;
+        const firstNumber = params.isPoems ? 2016 : 2004;
+        const curPosition = params.year;
+        if ((lastNumber - firstNumber) > 1) {
+            const resPag = this.renderPagination({}, params.prefixPath, '.html', curPosition, firstNumber, lastNumber, 0, `${params.isPoems ? 'Катрены' : 'Послания'} за `, ', ', 'год', true);
+            cnt += resPag.cnt;
+        }
 
-        cnt += this.renderFooter(undefined, '', '', '');
+        const prePage = curPosition - 1;
+        const nextPage = curPosition + 1;
+        cnt += this.renderFooter(undefined, params.prefixPath, '.html', prePage >= firstNumber ? (prePage === firstNumber && !params.isPoems ? 'otkroveniya' : prePage) : '', nextPage <= lastNumber ? (nextPage === lastNumber ? 'year' : nextPage) : '');
 
         res.cnt = cnt;
         res.tite = title;
@@ -160,12 +163,12 @@ class Views {
         return { cnt: cnt, prePage: prePage, nextPage: nextPage };
 	}
 
-    renderFooter(info, postfixSeries, prePage, nextPage) {
+    renderFooter(info, prefixPath, suffixPath, prePage, nextPage) {
 
         let cnt = '<div class="page-footer">';
 
         if (prePage && ((info && this.app.catalogsIsNext.includes(info.Catalog)) || !info)) {
-            cnt += `<a href="${prePage}${postfixSeries}" class="blue-link-pagination">Предыдущая</a>
+            cnt += `<a href="${prefixPath}${prePage}${suffixPath}" class="blue-link-pagination">Предыдущая</a>
                 <img src="img/star.gif" height="15" hspace="10" width="15">`
         }
 
@@ -180,7 +183,7 @@ class Views {
         }
         if (linkNext) {
             cnt += `<img src="img/star.gif" height="15" hspace="10" width="15">
-                <a href="${linkNext}${postfixSeries}" class="blue-link-pagination">Следующая</a>`;
+                <a href="${prefixPath}${linkNext}${suffixPath}" class="blue-link-pagination">Следующая</a>`;
             if (info && !info.Data.Next) {
                 cnt += '<span id="label-next" title="Следующей страницы ещё может не быть"> [*]</span><span id="spinner-next" class="bi-spinner"></span>';
             }

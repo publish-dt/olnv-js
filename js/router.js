@@ -39,19 +39,26 @@ class Router {
                     }
                     for (var n in this.app.routes[k].Route) {
                         const el = this.app.routes[k].Route[n];
-                        if (el.startsWith('{')) {
-                            const paramArr = el.slice(1, -1).split(':');
-                            const paramName = paramArr[0];
-                            const type = paramArr[1];
-                            switch (type) {
-                                case 'int':
-                                    const number = parseInt(path, 10);
-                                    if (!Number.isNaN(number))
-                                        params[paramName] = number;
-                                    break;
-                                default:
+                        const idx = el.indexOf('{');
+                        if (idx !== -1) {
+                            const prefixPath = path.substring(0, idx);
+                            if (prefixPath === el.substring(0, idx)) {
+                                const paramVal = path.substring(idx);
+                                const paramArr = el.slice(idx + 1, -1).split(':');
+                                const paramName = paramArr[0];
+                                const type = paramArr[1];
+                                switch (type) {
+                                    case 'int':
+                                        const number = Number(paramVal);
+                                        if (!Number.isNaN(number)) {
+                                            params[paramName] = number;
+                                            params.prefixPath = prefixPath;
+                                        }
+                                        break;
+                                    default:
+                                }
+                                if (Object.keys(params).length > 0) break;
                             }
-                            if (Object.keys(params).length > 0) break;
                         }
                     }
                     if (Object.keys(params).length > 0) {
@@ -196,15 +203,25 @@ class Router {
                             });*/
 
                         const isLastYear = path.endsWith('year');
-                        if (!isLastYear && route.ParamView && route.ParamView[0]) coll = coll;
+                        if (!isLastYear && route.ParamView && route.ParamView[0] || (isLastYear && route.Catalogs.includes(this.app.catalogs.tolk))) coll = coll;
                         else coll = coll.desc();
                         if (route.ParamView && route.ParamView.length > 1 && route.ParamView[1] === 'year') {
                             const isPoems = route.Catalogs.includes(this.app.catalogs.poems) ? true : (route.Catalogs.some(el => [this.app.catalogs.dict, this.app.catalogs.tolk].includes(el)) ? false : undefined);
-                            const yearFilter = isLastYear ? strToDate((isPoems ? infoLastPoems.Date : infoLastDict.Date)).getFullYear() : params.year;
-                            if (isLastYear) params.year = yearFilter;
+                            params.isPoems = isPoems;
+                            params.lastYear = strToDate((isPoems ? infoLastPoems.Date : infoLastDict.Date)).getFullYear();
+                            const yearFilter = isLastYear ? params.lastYear : params.year;
+                            if (isLastYear) {
+                                params.year = yearFilter;
+                                params.prefixPath = path.replace('year', '');
+                            }
                             coll = coll.and((info) => info.Date.includes(yearFilter));
                         }
-                        if (path === 'otkroveniya') params.year = 2004;
+                        if (path === 'otkroveniya') {
+                            params.year = 2004;
+                            params.isPoems = false;
+                            params.lastYear = strToDate(infoLastDict.Date).getFullYear();
+                        }
+                        params.isLastYear = isLastYear;
 
                         const infos = !route.ByLink ? await coll.sortBy('Date') : await coll.toArray();
 
@@ -437,7 +454,7 @@ class Router {
 
             if (info.Link !== 'index') {
 
-                cnt += this.app.views.renderFooter(info, '.html', prePage);
+                cnt += this.app.views.renderFooter(info, '', '.html', prePage);
 
             }
             else

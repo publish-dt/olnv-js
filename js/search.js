@@ -116,7 +116,7 @@ class Search {
                     return index !== -1 ? true : false;
                 });
                 else if (propSearch === 'Date') {
-                    if (searchString.startsWith('-'))
+                    if (searchString.startsWith('-')) // поиск по месяцу и дню
                         coll = coll.filter((info) => info.Date.indexOf(searchString) > -1);
                         //coll = coll.filter((info) => (new RegExp(searchString, 'gim')).test(info[propSearch]));
                     else coll = coll.where(propSearch).startsWith(searchString);
@@ -126,47 +126,66 @@ class Search {
                     //coll = coll.filter((info) => info[propSearch]/*.toLowerCase()*/.indexOf(searchString) > -1); // RegExp работает быстрее
 
                 const startTime = new Date();
-                infos = await coll.sortBy('Date'); //  
+                infos = coll; // await  .sortBy('Date')
                 const endTime = new Date();
 
                 console.log(`Поиск по фразе '${searchString}' окончен! Найдено ${infos.length} материалов. Заняло: ${endTime - startTime}`);
             }
 
 
-            dataView = this.prepareDataView(infos, searchData);
+            dataView = await this.prepareDataView(infos, advError, searchData);
         }
-        const res = await this.renderView(dataView, advError, queryParams);
+        const res = await this.renderView(dataView, queryParams);
 
         spinnerEl.style.display = 'none';
 
         return res;
     }
 
-    prepareDataView(infos, searchData) {
+    async prepareDataView(infosFluent, advError, searchData) {
         const patternHightlight = (searchData.inParagraph ? searchData.searchString : searchData.patternHightlight) || "";
 
         const skip = (searchData.pageIndex - 1) * this.m_PageSize;
         const limit = this.m_PageSize;
 
-        const dataView = searchData;
-        dataView.itemCount = infos.length;
+        const dataView = searchData; // т.к. в будущем будем searchData хранить между сеансами, то надо копировать не по ссылке
+        dataView.advError = advError;
         dataView.elementsView = [];
 
-        if (skip === 0) infos.length = limit;
-        else infos = infos.slice(skip, skip+limit); // infos.length
+        try {
+            //dataView.itemCount = await infosFluent.count(); // после этого (при использовании .where()) уже содержится в коллекции только один элемент
 
-        /*infos.each(_info => {
-        });*/
-        for (var i in infos) {
-            const _info = infos[i];
+            let infos = await infosFluent.sortBy('Date'); // абсолютно все результаты поиска помещаем в массив. Возможно, чтобы использовать курсоры, надо использовать https://dexie.org/docs/DBCore/DBCoreCursor, но в IE11 не поддерживается
+            dataView.itemCount = infos.length;
 
-            dataView.elementsView.push(this.renderContent(_info, searchData, patternHightlight));
+            if (skip === 0) infos.length = limit;
+            else infos = infos.slice(skip, skip+limit);
+            /*if (skip === 0) infosFluent.limit(limit);
+            else infosFluent.offset(skip).limit(limit);
+
+            await infosFluent.each(_info => {*/
+            for (var i in infos) {
+                const _info = infos[i];
+
+                dataView.elementsView.push(this.renderContent(_info, searchData, patternHightlight));
+            }
+            //});
+
+            /* сортировку одновременно вместе с each, вроде, невозможно сделать, поэтому делаем после, но это не правильно, т.к. надо её делать до limit
+            dataView.elementsView.sort((a, b) => {
+                if (a.Date < b.Date) return -1;
+                if (a.Date > b.Date) return 1;
+                return 0;
+            });*/
+        } catch (e) {
+            dataView.itemCount = 0;
+            dataView.advError = 'Произошла ошибка при выполнении поиска!';
         }
 
         return dataView;
     }
 
-    async renderView(dataView, advError, queryParams) {
+    renderView(dataView, queryParams) {
         const title = 'Результаты поиска';
         const res = {};
 
@@ -177,7 +196,7 @@ class Search {
         //const modelSearch = this.app.stateContainer.modelSearch;
 
         const itemCount = dataView.itemCount;
-        let whereText = await this.getHeaderTextParams(dataView.where, itemCount);
+        let whereText = this.getHeaderTextParams(dataView.where, itemCount);
 
         cnt += `<div id='res'>
                     <div id='msg-search'>
@@ -193,7 +212,7 @@ class Search {
                 : ("Найден" + getDeclension(itemCount, "а", "о", "о")) + '&nbsp;'
             )
             + `<strong>${itemCount}</strong> ${whereText[2]}.<br />`
-            : (!advError ?
+            : '<span style="color: peru;">' + (!dataView.advError ?
                 `К сожалению, ничего не найдено.<br /><br />${((dataView.searchString.includes("*")) ? "Символ звёздочки (*) можно использовать только между словами через пробел (в этом случае заменяет любое количество слов или ни одного). Например: 'микро * фрактал'<br /><br />" : "")}`
 
                 + (dataView.where != 'Date' ? `
@@ -204,7 +223,7 @@ class Search {
                 Поэтому, если вы ввели в строку поиска более одного слова, попробуйте уменьшить количество слов или изменить окончания у некоторых слов и повторите поиск.
                 <br />
                 ` : "")
-                : advError);
+                : dataView.advError) + '</span>';
 
         cnt += '</p></div>'
 
@@ -259,7 +278,7 @@ class Search {
                         </div><!--/search-pagin-blok-->`;
             }
 
-            cnt += this.app.views.renderFooter(undefined, '', res ? res.prePage : '', res ? res.nextPage : '');
+            cnt += this.app.views.renderFooter(undefined, '', '', res ? res.prePage : '', res ? res.nextPage : '');
         }
 
         res.title = title;
@@ -351,7 +370,7 @@ class Search {
         return elementView;
     }
 
-    async getHeaderTextParams(where, itemCount) {
+    getHeaderTextParams(where, itemCount) {
         let whereText = ["", ""];
         switch (where) {
             case 'Mess':

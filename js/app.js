@@ -86,7 +86,7 @@ class App {
 					this.catalogs.poems
 				],
 				ByLink: false,
-				Route: ["poems/year", "{year:int}"],
+				Route: ["poems/year", "poems/{year:int}"],
 				Title: "Катрены из Откровений за ",
 				ParamView: [true, 'year']
 			}
