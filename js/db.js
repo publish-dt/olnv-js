@@ -26,15 +26,15 @@ class DB {
 		let isLastCheckGood;
 		let lastUpdated;
 		let isUpdated = false;
-		const serviceDwld = await download(url + '/service.json');
+		const serviceDwld = await this.download(url + '/service.json');
 		if (serviceDwld) {
 			const isExist = await Dexie.exists('OtkDB');
 			if (!isExist) createDB();
 			const serviceData = await db.settings.get('serviceData');
 
-			const res = await fillInfos(serviceDwld, serviceData, url, this.app);
-			await fillFiles(serviceDwld, serviceData, url, this.app);
-			await fillQuote(serviceDwld, serviceData, url, this.app);
+			const res = await this.fillInfos(serviceDwld, serviceData, url, this.app);
+			await this.fillFiles(serviceDwld, serviceData, url, this.app);
+			await this.fillQuote(serviceDwld, serviceData, url, this.app);
 
 			isLastCheckGood = true;
 
@@ -77,302 +77,302 @@ class DB {
 
 		console.log(`В базе: ${db ? await db.infos.count() : 0} материалов`);
 	}
-}
 
-async function fillInfos(serviceDwld, serviceData, url, app) {
-	const res = {};
+	async fillInfos(serviceDwld, serviceData, url, app) {
+		const res = {};
 
-	const lastDateChange = strToDate(serviceDwld.LastDateChange);
-	const lastDateChangeStore = (serviceData === undefined || serviceData.LastDateChange === undefined ? strToDate(0, 0, 0) : strToDate(serviceData.LastDateChange));
-	if (serviceData === undefined || lastDateChange > lastDateChangeStore) {
-		let nameZip = serviceData === undefined || Math.round((lastDateChange - lastDateChangeStore) / (1000 * 60 * 60 * 24)) >= 7 ? "full" : "last";
-
-		// это только для отладки
-		// необходимо установить точку останова на const updated = await db.settings.update..., и после остановки в этой точке в консоли браузера выполнить: serviceDwld.LastDateChange = "2026-09-23T11:36:32.006+03:00" , где дата соответствует последней дате из full.json
-		/*if (nameZip === 'full') url = '/data';
-		else nameZip = 'full';*/
-
-		try {
-			const files = await downloadAndUnzip(url + `/${nameZip}.zip`);
-			if (files !== undefined && files.length > 0) {
-				let lastTolk = this.app.stateContainer.lastTolk;// JSON.parse(localStorage.getItem('olnvjs_lastTolk'));
-				let lastPoem = this.app.stateContainer.lastPoem;// JSON.parse(localStorage.getItem('olnvjs_lastPoem'));
-				const lastTolkStore = lastTolk;
-				const lastPoemStore = lastPoem;
-
-				for (var i in files) {
-					const file = files[i];
-
-					console.log(`Загрузка материалов из ${file.name} в БД...`);
-
-					let counter = 0;
-					let numberNewData = 0;
-					let numberChangeData = 0;
-					let jsonString = undefined;
-					//const toDelete = [];
-					const arrData = file.content.split('\n');
-					const totalCount = arrData.length;
-					let percent = 0;
-					for (var i in arrData) {
-                        if (i % 100 === 0) {
-							percent = i * 100 / totalCount;
-							percentUpdatedEl.innerHTML = ` - ${Math.trunc(percent)}%`;
-                        }
-						try {
-							jsonString = arrData[i];
-							if (jsonString !== "") {
-								const obj = JSON.parse(jsonString);
-
-								const dateChange = strToDate(obj.DateChange);
-								const date = strToDate(obj.Date);
-								if (obj.Active === true && (dateChange > lastDateChangeStore || (lastPoemStore && obj.Id === lastPoemStore.Id) || (lastTolkStore && obj.Id === lastTolkStore.Id))) { // это новый/изменённый материал или последний Катрен/Послание, это нужно, чтобы старые и не изменённые материалы не пересохранять в БД
-									let isFound = false;
-									await db.infos.where("Id").equalsIgnoreCase(obj.Id).modify((value, ref) => { // изменяем существующую запись в БД
-										ref.value = obj;
-										isFound = true;
-									});
-
-									if (isFound) { // это изменённый материал
-										if (lastPoemStore && obj.Id !== lastPoemStore.Id && lastTolkStore && obj.Id !== lastTolkStore.Id) { // Последний Катрен/Послание не должен учитываться в списке изменённых материалов, т.к. в нём меняется только Data.Next
-											console.log('Изменённый материал: ' + obj.Link);
-											numberChangeData++;
-										}
-									}
-									else { // это новый материал
-										await db.infos.add(obj);
-										if (serviceData && serviceData.LastDateChange) console.log('Новый материал: ' + obj.Link);
-										numberNewData++;
-									}
-
-									// обновляем кэш данных последнего Катрена/Послания
-									if (obj.Catalog === app.catalogs.poems && (!lastPoem || obj.Date > lastPoem.Date || obj.Id === lastPoem.Id)) {
-										obj.Description = '';
-										lastPoem = obj;
-									}
-									else if (obj.Catalog === app.catalogs.tolk && (!lastTolk || obj.Date > lastTolk.Date || obj.Id === lastTolk.Id)) {
-										obj.Description = '';
-										lastTolk = obj;
-									}
-
-									counter++;
-								}
-								else if (serviceData && serviceData.LastDateChange && obj.Active === false && dateChange > lastDateChangeStore) {
-									//toDelete.push(obj.Id);
-									await db.infos.delete(obj.Id);
-								}
-							}
-
-						} catch (e) {
-							console.error('Ошибка при парсинге и добавлении материала в БД', e);
-						}
-					}
-					console.log(`Загружено ${counter} материалов`);
-					percentUpdatedEl.innerHTML = '';
-
-					// кэшируем основные данные последнего Катрена и Послания
-					if (lastPoem) {
-						this.app.stateContainer.lastPoem = lastPoem;
-						localStorage.setItem('olnvjs_lastPoem', JSON.stringify(lastPoem));
-					}
-					if (lastTolk) {
-						this.app.stateContainer.lastTolk = lastTolk;
-						localStorage.setItem('olnvjs_lastTolk', JSON.stringify(lastTolk));
-					}
-
-					res.numberNewData = numberNewData;
-					res.numberChangeData = numberChangeData;
-				}
-			}
-
-			console.log('Загрузка материалов в БД завершена');
-
-			const updated = await db.settings.update('serviceData', { LastDateChange: serviceDwld.LastDateChange });
-			if (!updated) {
-				const objServ = { name: 'serviceData' };
-				objServ.LastDateChange = serviceDwld.LastDateChange;
-				await db.settings.add(objServ);
-			}
-		} catch (e) {
-			console.error(e);
-		}
-	}
-	else if (serviceData !== undefined && lastDateChange < lastDateChangeStore) {
-		// на текущем сервере давно не обновлялись архивы данных
-		console.log(`На сервере ${url} давно не обновлялись данные. Необходимо сообщить об этом администратору!`);
-	}
-
-	return res;
-}
-
-async function fillFiles(serviceDwld, serviceData, url, app) {
-
-	for (var i in serviceDwld.InfoFiles) {
-
-		const lastDateChange = strToDate(serviceDwld.InfoFiles[i]);
-		const lastDateChangeStore = (serviceData === undefined || serviceData.InfoFiles === undefined || serviceData.InfoFiles[i] === undefined ? strToDate(0, 0, 0) : strToDate(serviceData.InfoFiles[i]));
+		const lastDateChange = strToDate(serviceDwld.LastDateChange);
+		const lastDateChangeStore = (serviceData === undefined || serviceData.LastDateChange === undefined ? strToDate(0, 0, 0) : strToDate(serviceData.LastDateChange));
 		if (serviceData === undefined || lastDateChange > lastDateChangeStore) {
-			const nameZip = i;
+			let nameZip = serviceData === undefined || Math.round((lastDateChange - lastDateChangeStore) / (1000 * 60 * 60 * 24)) >= 7 ? "full" : "last";
 
 			// это только для отладки
-			//url = '/data';
+			// необходимо установить точку останова на const updated = await db.settings.update..., и после остановки в этой точке в консоли браузера выполнить: serviceDwld.LastDateChange = "2026-09-23T11:36:32.006+03:00" , где дата соответствует последней дате из full.json
+			/*if (nameZip === 'full') url = '/data';
+			else nameZip = 'full';*/
 
-            try {
-				const files = await downloadAndUnzip(url + `/files/${nameZip}.zip`, true);
+			try {
+				const files = await this.downloadAndUnzip(url + `/${nameZip}.zip`);
 				if (files !== undefined && files.length > 0) {
-					for (var j in files) {
+					let lastTolk = this.app.stateContainer.lastTolk;// JSON.parse(localStorage.getItem('olnvjs_lastTolk'));
+					let lastPoem = this.app.stateContainer.lastPoem;// JSON.parse(localStorage.getItem('olnvjs_lastPoem'));
+					const lastTolkStore = lastTolk;
+					const lastPoemStore = lastPoem;
 
-						const file = files[j];
+					for (var i in files) {
+						const file = files[i];
 
-						console.log(`Запись файла ${file.name} в кэш браузера...`);
+						console.log(`Загрузка материалов из ${file.name} в БД...`);
 
-						const cache = await caches.open("cnt");
-
-						const blob = new Blob([file.content], {
-							type: 'image/jpeg', // application/octet-stream
-							ok: true,
-							status: 200
-						});
-						const headers = new Headers({
-							'content-length': blob.size
-						});
-						const response = new Response(blob, {
-							headers
-						});
-
-						await cache.put(`/cnt/${i}/${file.name}`, response); // new Request(`/cnt/${i}/${file.name}`)
-
-					}
-				}
-				else {
-					const keys = await cache.keys();
-					keys.forEach(request => {
-						if (request.url.includes(`/cnt/${i}/`)) {
-							cache.delete(request.url);
-							console.log('Удалён кэш для: ', request.url);
-                        }
-					});
-				}
-
-				console.log(`Запись файлов в кэш браузера завершена`);
-
-				const updated = await db.settings.update('serviceData', { [`InfoFiles.${i}`]: serviceDwld.InfoFiles[i] });
-				if (!updated) {
-					const objServ = { InfoFiles: {}, name: 'serviceData' };
-					objServ.InfoFiles[i] = serviceDwld.InfoFiles[i];
-					await db.settings.add(objServ); //  { [nameProp]: serviceDwld.InfoFiles[i], name: 'serviceData' }
-				}
-            } catch (e) {
-
-            }
-		}
-    }
-}
-
-async function fillQuote(serviceDwld, serviceData, url, app) {
-	const LastNumberQuote = serviceDwld.LastNumberQuote;
-	const LastNumberQuoteStore = (serviceData === undefined ? 0 : serviceData.LastNumberQuote);
-	if (serviceData === undefined || LastNumberQuote !== LastNumberQuoteStore) {
-		try {
-			const files = await downloadAndUnzip(url + '/quote.zip');
-			if (files !== undefined && files.length > 0) {
-				for (var i in files) {
-					const file = files[i];
-
-					console.log(`Загрузка цитат из ${file.name} в БД...`);
-
-					let numberNewData = 0;
-					let jsonString = undefined;
-					const arrData = file.content.split('\n');
-					for (var i in arrData) {
-                        try {
-							jsonString = arrData[i];
-							if (jsonString !== "") {
-								const obj = JSON.parse(jsonString);
-
-								// это только для отладки
-								// необходимо установить точку останова на const updated = await db.settings.update..., и после остановки в этой точке в консоли браузера выполнить: serviceDwld.LastNumberQuote = 99 , где 99 соответствует последнему номеру из quote.json
-								// && obj.Number < 100
-								if (!obj.Deleted && obj.Number > LastNumberQuoteStore) { // это новая цитата 
-									await db.quote.add(obj);
-									if (serviceData !== undefined) console.log('Новая цитата из: ' + obj.Link);
-									numberNewData++;
-                                }
+						let counter = 0;
+						let numberNewData = 0;
+						let numberChangeData = 0;
+						let jsonString = undefined;
+						//const toDelete = [];
+						const arrData = file.content.split('\n');
+						const totalCount = arrData.length;
+						let percent = 0;
+						for (var i in arrData) {
+							if (i % 100 === 0) {
+								percent = i * 100 / totalCount;
+								percentUpdatedEl.innerHTML = ` - ${Math.trunc(percent)}%`;
 							}
-						} catch (e) {
-							console.error('Ошибка при парсинге и добавлении цитаты в БД', e);
-                        }
+							try {
+								jsonString = arrData[i];
+								if (jsonString !== "") {
+									const obj = JSON.parse(jsonString);
+
+									const dateChange = strToDate(obj.DateChange);
+									const date = strToDate(obj.Date);
+									if (obj.Active === true && (dateChange > lastDateChangeStore || (lastPoemStore && obj.Id === lastPoemStore.Id) || (lastTolkStore && obj.Id === lastTolkStore.Id))) { // это новый/изменённый материал или последний Катрен/Послание, это нужно, чтобы старые и не изменённые материалы не пересохранять в БД
+										let isFound = false;
+										await db.infos.where("Id").equalsIgnoreCase(obj.Id).modify((value, ref) => { // изменяем существующую запись в БД
+											ref.value = obj;
+											isFound = true;
+										});
+
+										if (isFound) { // это изменённый материал
+											if (lastPoemStore && obj.Id !== lastPoemStore.Id && lastTolkStore && obj.Id !== lastTolkStore.Id) { // Последний Катрен/Послание не должен учитываться в списке изменённых материалов, т.к. в нём меняется только Data.Next
+												console.log('Изменённый материал: ' + obj.Link);
+												numberChangeData++;
+											}
+										}
+										else { // это новый материал
+											await db.infos.add(obj);
+											if (serviceData && serviceData.LastDateChange) console.log('Новый материал: ' + obj.Link);
+											numberNewData++;
+										}
+
+										// обновляем кэш данных последнего Катрена/Послания
+										if (obj.Catalog === app.catalogs.poems && (!lastPoem || obj.Date > lastPoem.Date || obj.Id === lastPoem.Id)) {
+											obj.Description = '';
+											lastPoem = obj;
+										}
+										else if (obj.Catalog === app.catalogs.tolk && (!lastTolk || obj.Date > lastTolk.Date || obj.Id === lastTolk.Id)) {
+											obj.Description = '';
+											lastTolk = obj;
+										}
+
+										counter++;
+									}
+									else if (serviceData && serviceData.LastDateChange && obj.Active === false && dateChange > lastDateChangeStore) {
+										//toDelete.push(obj.Id);
+										await db.infos.delete(obj.Id);
+									}
+								}
+
+							} catch (e) {
+								console.error('Ошибка при парсинге и добавлении материала в БД', e);
+							}
+						}
+						console.log(`Загружено ${counter} материалов`);
+						percentUpdatedEl.innerHTML = '';
+
+						// кэшируем основные данные последнего Катрена и Послания
+						if (lastPoem) {
+							this.app.stateContainer.lastPoem = lastPoem;
+							localStorage.setItem('olnvjs_lastPoem', JSON.stringify(lastPoem));
+						}
+						if (lastTolk) {
+							this.app.stateContainer.lastTolk = lastTolk;
+							localStorage.setItem('olnvjs_lastTolk', JSON.stringify(lastTolk));
+						}
+
+						res.numberNewData = numberNewData;
+						res.numberChangeData = numberChangeData;
 					}
 				}
-			}
 
-			console.log(`Загрузка цитат в БД завершена`);
+				console.log('Загрузка материалов в БД завершена');
 
-			const updated = await db.settings.update('serviceData', { LastNumberQuote: serviceDwld.LastNumberQuote });
-			if (!updated) {
-				const objServ = { name: 'serviceData' };
-				objServ.LastNumberQuote = serviceDwld.LastNumberQuote;
-				await db.settings.add(objServ);
+				const updated = await db.settings.update('serviceData', { LastDateChange: serviceDwld.LastDateChange });
+				if (!updated) {
+					const objServ = { name: 'serviceData' };
+					objServ.LastDateChange = serviceDwld.LastDateChange;
+					await db.settings.add(objServ);
+				}
+			} catch (e) {
+				console.error(e);
 			}
-		} catch (e) {
-			console.error(e);
 		}
+		else if (serviceData !== undefined && lastDateChange < lastDateChangeStore) {
+			// на текущем сервере давно не обновлялись архивы данных
+			console.log(`На сервере ${url} давно не обновлялись данные. Необходимо сообщить об этом администратору!`);
+		}
+
+		return res;
 	}
-}
 
-async function downloadAndUnzip(url, isFile) {
-	try {
-		if (url !== undefined) {
+	async fillFiles(serviceDwld, serviceData, url, app) {
 
-			console.log(`Скачивание архива ${url} ...`);
+		for (var i in serviceDwld.InfoFiles) {
 
-			const response = await fetch(url);
-			if (!response.ok) throw new Error('Ошибка загрузки архива');
+			const lastDateChange = strToDate(serviceDwld.InfoFiles[i]);
+			const lastDateChangeStore = (serviceData === undefined || serviceData.InfoFiles === undefined || serviceData.InfoFiles[i] === undefined ? strToDate(0, 0, 0) : strToDate(serviceData.InfoFiles[i]));
+			if (serviceData === undefined || lastDateChange > lastDateChangeStore) {
+				const nameZip = i;
 
-			console.log('Архив скачан');
+				// это только для отладки
+				//url = '/data';
 
-			console.log('Распаковка архива...');
+				try {
+					const files = await this.downloadAndUnzip(url + `/files/${nameZip}.zip`, true);
+					if (files !== undefined && files.length > 0) {
+						for (var j in files) {
 
-			const arrayBuffer = await response.arrayBuffer();
+							const file = files[j];
 
-			const zip = new JSZip();
-			const unzipped = await zip.loadAsync(arrayBuffer);
+							console.log(`Запись файла ${file.name} в кэш браузера...`);
 
-			// Обрабатываем содержимое архива
-			const files = [];
+							const cache = await caches.open("cnt");
 
-			//for (const [filename, file] of Object.entries(unzipped.files)) {
-			for (const filename in unzipped.files) {
-				const file = unzipped.files[filename];
-				if (!file.dir) { // Пропускаем папки
-					const content = await file.async(isFile ? 'arraybuffer' : 'string');
+							const blob = new Blob([file.content], {
+								type: 'image/jpeg', // application/octet-stream
+								ok: true,
+								status: 200
+							});
+							const headers = new Headers({
+								'content-length': blob.size
+							});
+							const response = new Response(blob, {
+								headers
+							});
 
-					files.push({
-						name: filename,
-						content: content
-					});
+							await cache.put(`/cnt/${i}/${file.name}`, response); // new Request(`/cnt/${i}/${file.name}`)
+
+						}
+					}
+					else {
+						const keys = await cache.keys();
+						keys.forEach(request => {
+							if (request.url.includes(`/cnt/${i}/`)) {
+								cache.delete(request.url);
+								console.log('Удалён кэш для: ', request.url);
+							}
+						});
+					}
+
+					console.log(`Запись файлов в кэш браузера завершена`);
+
+					const updated = await db.settings.update('serviceData', { [`InfoFiles.${i}`]: serviceDwld.InfoFiles[i] });
+					if (!updated) {
+						const objServ = { InfoFiles: {}, name: 'serviceData' };
+						objServ.InfoFiles[i] = serviceDwld.InfoFiles[i];
+						await db.settings.add(objServ); //  { [nameProp]: serviceDwld.InfoFiles[i], name: 'serviceData' }
+					}
+				} catch (e) {
+
 				}
 			}
-
-			return files;
 		}
-	} catch (error) {
-		console.error(`Ошибка при скачивании ${url}:`, error);
 	}
-}
-			
-async function download(url) {
-	try {
-		if (url !== undefined) {
-			const response = await fetch(url);
-			if (!response.ok) throw new Error(`Ошибка загрузки ${url}`);
 
-			const data = await response.json();
+	async fillQuote(serviceDwld, serviceData, url, app) {
+		const LastNumberQuote = serviceDwld.LastNumberQuote;
+		const LastNumberQuoteStore = (serviceData === undefined ? 0 : serviceData.LastNumberQuote);
+		if (serviceData === undefined || LastNumberQuote !== LastNumberQuoteStore) {
+			try {
+				const files = await this.downloadAndUnzip(url + '/quote.zip');
+				if (files !== undefined && files.length > 0) {
+					for (var i in files) {
+						const file = files[i];
 
-			return data;
+						console.log(`Загрузка цитат из ${file.name} в БД...`);
+
+						let numberNewData = 0;
+						let jsonString = undefined;
+						const arrData = file.content.split('\n');
+						for (var i in arrData) {
+							try {
+								jsonString = arrData[i];
+								if (jsonString !== "") {
+									const obj = JSON.parse(jsonString);
+
+									// это только для отладки
+									// необходимо установить точку останова на const updated = await db.settings.update..., и после остановки в этой точке в консоли браузера выполнить: serviceDwld.LastNumberQuote = 99 , где 99 соответствует последнему номеру из quote.json
+									// && obj.Number < 100
+									if (!obj.Deleted && obj.Number > LastNumberQuoteStore) { // это новая цитата 
+										await db.quote.add(obj);
+										if (serviceData !== undefined) console.log('Новая цитата из: ' + obj.Link);
+										numberNewData++;
+									}
+								}
+							} catch (e) {
+								console.error('Ошибка при парсинге и добавлении цитаты в БД', e);
+							}
+						}
+					}
+				}
+
+				console.log(`Загрузка цитат в БД завершена`);
+
+				const updated = await db.settings.update('serviceData', { LastNumberQuote: serviceDwld.LastNumberQuote });
+				if (!updated) {
+					const objServ = { name: 'serviceData' };
+					objServ.LastNumberQuote = serviceDwld.LastNumberQuote;
+					await db.settings.add(objServ);
+				}
+			} catch (e) {
+				console.error(e);
+			}
 		}
-	} catch (error) {
-		if (error.message === 'Failed to fetch')
-			console.log(`Ресурс ${url} недоступен:`, error.message);
-		else console.error(`Ошибка при скачивании ${url}:`, error);
+	}
+
+	async downloadAndUnzip(url, isFile) {
+		try {
+			if (url !== undefined) {
+
+				console.log(`Скачивание архива ${url} ...`);
+
+				const response = await fetch(url);
+				if (!response.ok) throw new Error('Ошибка загрузки архива');
+
+				console.log('Архив скачан');
+
+				console.log('Распаковка архива...');
+
+				const arrayBuffer = await response.arrayBuffer();
+
+				const zip = new JSZip();
+				const unzipped = await zip.loadAsync(arrayBuffer);
+
+				// Обрабатываем содержимое архива
+				const files = [];
+
+				//for (const [filename, file] of Object.entries(unzipped.files)) {
+				for (const filename in unzipped.files) {
+					const file = unzipped.files[filename];
+					if (!file.dir) { // Пропускаем папки
+						const content = await file.async(isFile ? 'arraybuffer' : 'string');
+
+						files.push({
+							name: filename,
+							content: content
+						});
+					}
+				}
+
+				return files;
+			}
+		} catch (error) {
+			console.error(`Ошибка при скачивании ${url}:`, error);
+		}
+	}
+			
+	async download(url) {
+		try {
+			if (url !== undefined) {
+				const response = await fetch(url);
+				if (!response.ok) throw new Error(`Ошибка загрузки ${url}`);
+
+				const data = await response.json();
+
+				return data;
+			}
+		} catch (error) {
+			if (error.message === 'Failed to fetch')
+				console.log(`Ресурс ${url} недоступен:`, error.message);
+			else console.error(`Ошибка при скачивании ${url}:`, error);
+		}
 	}
 }

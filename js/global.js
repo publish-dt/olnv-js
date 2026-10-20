@@ -1,4 +1,4 @@
-window.verApp = '1.0.0-alpha11';
+window.verApp = '1.0.0-alpha12';
 window.netOffline = undefined;
 
 window.onerror = function (message, url, line, col, error) {
@@ -43,6 +43,11 @@ check();
 setInterval(check, 30000);
 
 
+// склонение числительных
+function declOfNum(number, titles) {
+    cases = [2, 0, 1, 1, 1, 2];
+    return titles[(number % 100 > 4 && number % 100 < 20) ? 2 : cases[(number % 10 < 5) ? number % 10 : 5]];
+}
 function getDeclension(number, nominativ, genetiv, plural) {
     number = number % 100;
     if (number >= 11 && number <= 19) {

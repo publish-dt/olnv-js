@@ -91,6 +91,29 @@ class App {
 				ParamView: [true, 'year']
 			}
 		];
+		this.specDate = {
+			"2010/07/22": "Обращение Создателя к населению России",
+			"2010/08/17": "ОБРАЩЕНИЕ СОЗДАТЕЛЯ ПЕРЕД 26 АВГУСТА",
+			"2012/11/26": "Вселенский Собор",
+			"2013/07/26": "Великое Вселенское Вече Начала Начал",
+			"2014/07/26": "Великое Вече «МЫ ГОТОВЫ»",
+			"2014/11/17": "Вече «МЫ В ВЕЧНОСТИ»"/*,
+			"2015/08/26": "Вече «НАДЕЖДА»",
+			"2016/05/20": "I Форум",
+			"2016/06/26": "II Форум",
+			"2016/09/26": "III Форум",
+			"2016/12/08": "IV Форум",
+			"2018/02/24": "V Форум",
+			"2018/12/08": "VI Форум",
+			"2019/06/17": "VII Форум",
+			"2019/12/19": "VIII Форум",
+			"2020/09/26": "IX Форум",
+			"2022/06/26": "X Форум",
+			"2022/12/18": "XI Форум",
+			"2024/02/09": "XII Форум",
+			"2024/08/26": "Конгресс «Материя, Энергия, Информация» (XIII Форум)",
+			"2025/09/03": "XIV Форум"*/
+		};
 
 		// для управления состоянием приложения
 		this.stateContainer = new StateContainer();
@@ -129,6 +152,7 @@ class App {
 		window.formEl = document.getElementById('search');
 		window.percentUpdatedEl = document.getElementById('percent-updated');
 		window.CldEl = document.getElementById('caleandar');
+		window.timeleftBlock = document.getElementById('timeleft-block');
 
 		const isExist = await Dexie.exists('OtkDB');
 		if (!isExist)
@@ -137,6 +161,23 @@ class App {
 		this.myDB.fillDb();
 
 		this.cld.buildCalendar();
+
+		/** обратный отсчёт */
+		this.servTime = new Date(); //data.ServerTime время с сервера
+		this.timeleft = -1; // (в секундах) сколько осталось секунд до ближайшего Посыла
+		this.showBlock = true; //data.ShowBlock вкл/выкл отображение блока обратного отсчёта
+		//diff = 0; // разница между временем на клиенте (в браузере) и на сервере
+		this.countStartPosyl = 0; // сколько прошо времени с момента начала Посыла
+		//countFromLastUpdate = 0; // сколько прошло времени с последнего обновления
+		//rndLeft = 0;
+		this.rndCounter = Math.floor(Math.random() * (300 - 0 + 1)) + 0; // чтобы не в одно и тоже время все клиенты синхронизировали время обратного отсчёта
+		this.period = 5000; // интервал времени (в сек.) для обновления в отображении обратного отсчёта
+		//timerOn = false; // признак активности таймера обратного отсчёта
+		this.procBigDiff = false; // начат процесс получения времени с сервера, т.к. сайт находился в спящем режиме
+		this.isDebugTimeleft = true; // вкл./выкл. отладчик обратного отсчёта
+		this.localTime = new Date();
+
+		setInterval(this.countdown(this), this.period);
 
 
 		/** получаем последнюю открытую пользователем страницу */
@@ -184,6 +225,66 @@ class App {
 
 		const lastlastUpdatedEl = document.getElementById('last-updated');
 		lastlastUpdatedEl.innerHTML = lastUpdated ? toDateTime.format(lastUpdated) : '--';
+	}
+
+	/** Обратный отсчёт до Посыла */
+	countdown(app) {
+
+		//countFromLastUpdate += this.period / 1000;
+		this.countStartPosyl += this.period / 1000;
+
+		let today = 0;
+		let thour = !app.showBlock ? 0 : Math.floor(app.timeleft / 3600);
+		let tmin = !app.showBlock ? 0 : Math.floor(app.timeleft / 60 - 60 * thour);
+		let tsec = !app.showBlock ? 0 : app.timeleft % 60;
+
+		if (app.showBlock) {
+			const timestr = (today > 0 ? '<span class="txt-gray">' + today + '</span>' + declOfNum(today, [' день ', ' дня ', ' дней ']) : '') + '<span class="txt-gray">' + thour + '</span>' + declOfNum(thour, [' час ', ' часа ', ' часов ']) + '<span class="txt-gray">' + tmin + '</span>' + declOfNum(tmin, [' минута ', ' минуты ', ' минут ']) + '<span class="txt-gray">' + tsec + '</span>' + " сек.";
+			document.getElementById('timeleft').innerHTML = timestr;
+			if (timeleftBlock.classList.contains('hidden')) {
+				timeleftBlock.classList.remove('hidden');
+			}
+		}
+		if (app.timeleft >= 0) {
+			if (app.timeleft === 0 && app.showBlock) {
+				app.showBlock = false;
+				app.countStartPosyl = 0;
+			}
+			app.timeleft -= app.period / 1000;
+		}
+
+		if (!app.showBlock && app.countStartPosyl >= (301 + app.rndCounter)) { // через 5+rnd минут после начала Посыла синхронизируем (получаем остаток времени до следующего Посыла)
+			if (app.isDebugTimeleft) console.log('синхронизация через ~5 мин. после начала Посыла');
+
+			//htmx.ajax('GET', '/ext/countdown', { handler: processJsonCountdown }); // нужно делать запрос, чтобы получить время следующего Посыла
+		}
+
+
+		let diffServ = new Date() - app.servTime;
+		let diffLocal = new Date() - app.localTime;
+		// если разница во времени между сохранённой ранее локальной/клиентской датой и текущей локальной датой больше чем 5+5 сек, т.е. страница сайта была долго в спящем режиме (свёрнута или комп. был в спящем режиме)
+		if (diffLocal > 10000) {
+			if (app.procBigDiff === false /*&& checkIntervalAddUser(true)*/) { // когда окно браузера с сайтом свёрнуто, то js выполняет код раз в минуту, поэтому проверяем ещё и активность пользователя перед отправкой запроса
+				app.procBigDiff = true;
+				if (app.isDebugTimeleft) console.log('разница - ' + diffLocal + ' время = ' + new Date());
+
+				//htmx.ajax('GET', '/ext/countdown', { handler: processJsonCountdown });
+			}
+		}
+		else {
+			app.localTime = new Date();
+
+			/*if (checkIntervalAddUser()) {
+				htmx.ajax('POST', '/ext/addusr', { source: '#dummy' }); // каждые 5 мин. (активные intervalAddUser) обновляем активность пользователя на сервере
+			}*/
+		}
+
+		app.servTime.setSeconds(app.servTime.getSeconds() + app.period / 1000); // поддерживаем в актуальном состоянии время, полученное с сервера
+
+		if (app.isDebugTimeleft) {
+			console.log('timeleft = ' + app.timeleft + /*'; rndLeft = ' + rndLeft + '; countFromLastUpdate = ' + countFromLastUpdate*/ + '; countStartPosyl = ' + app.countStartPosyl + '; rndCounter = ' + app.rndCounter + '; diffLocal = ' + diffLocal + '; diffServ = ' + diffServ);
+			console.log('время = ' + new Date());
+		}/**/
 	}
 }
 

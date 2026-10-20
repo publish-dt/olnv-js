@@ -790,7 +790,7 @@ p.c0 {
 .razdel.row{
 	margin-top: 0px;
 }
-	.razdel h2 {
+	.razdel h2, .razdel summary {
 		color: #9CF !important;
 		border-left: 1px solid #9CF;
 		border-bottom: 1px solid #9CF; /*голубой ссылка*/
@@ -798,6 +798,8 @@ p.c0 {
 		padding-left: 10px;
 		font-weight: 400 !important;
 		font-size: 20px !important;
+		margin-top: 20px;
+		margin-bottom: 10px;
 	}
 	.razdel h2 a {
 		color: #9CF !important;
