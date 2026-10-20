@@ -28,7 +28,17 @@ class Router {
                 const arrPath = path.split('#');
                 if (arrPath.length > 1) hash = arrPath[1];
                 path = arrPath[0];
-                
+
+                // Получаем дату из path
+                const datePath = getDateFromPath(path);
+                let monthCld;
+                let yearCld;
+                if (datePath) {
+                    monthCld = datePath.getMonth();
+                    yearCld = datePath.getFullYear();
+                }
+                this.app.cld.getDataCalendar(yearCld, monthCld);
+
                 // получаем настройки роутинга
                 let params = {};
                 let route = { ByLink: true };
@@ -89,29 +99,19 @@ class Router {
                 else {
 
                     /** Получение последнего Послания */
-                    let lastTolkStore = JSON.parse(localStorage.getItem('olnvjs_lastTolk'));
+                    let lastTolkStore = this.app.stateContainer.lastTolk;// JSON.parse(localStorage.getItem('olnvjs_lastTolk'));
                     const infoLastDict = lastTolkStore ? lastTolkStore :
                     await db.infos
                         .orderBy('Date')
                             .filter((info) => info.Catalog === this.app.catalogs.tolk)
-                        /*.where('Catalog')
-                        .equalsIgnoreCase('55d6a586b6b9a45a700f9eee')*/
-                        //.limit(1)
-                        //.desc()
-                        //.sortBy('Date');
-                        //.toArray();
                         .last();
 
                     /** Получение последнего Катрена */
-                    let lastPoemStore = JSON.parse(localStorage.getItem('olnvjs_lastPoem'));
+                    let lastPoemStore = this.app.stateContainer.lastPoem;// JSON.parse(localStorage.getItem('olnvjs_lastPoem'));
                     const infoLastPoems = lastPoemStore ? lastPoemStore :
                     await db.infos
                         .orderBy('Date')
                             .filter((info) => info.Catalog === this.app.catalogs.poems)
-                        /*.where('Catalog')
-                        .equalsIgnoreCase('570ef2fcd07cda3e16f93ef7')
-                        .desc()
-                        .sortBy('Date');*/
                         .last();
 
 
@@ -185,22 +185,10 @@ class Router {
 
                         let routeBy = route.ByLink ? 'Link' : 'Catalog';
                         let routeVal = route.ByLink ? path : route.Catalogs[0];
-                        /*if (path === 'novosti') {
-                            routeBy = 'Catalog';
-                            routeVal = this.app.catalogs.notices;
-                            infoIsList = true;
-                        }*/
 
                         let coll = db['infos']
                             .where(routeBy)
                             .equalsIgnoreCase(routeVal);
-                            //.filter((info) => regexp.test(info.Link))
-                            /*.desc()
-                            .sortBy('Date');*/
-                            //.toArray();
-                            //.and((info) => regexp.test(info.Link))
-                            /*.each(async (info) => {
-                            });*/
 
                         const isLastYear = path.endsWith('year');
                         if (!isLastYear && route.ParamView && route.ParamView[0] || (isLastYear && route.Catalogs.includes(this.app.catalogs.tolk))) coll = coll;
@@ -256,7 +244,7 @@ class Router {
         }
         let cntIsSet = false;
         if (cnt === '') {
-            if (!this.app.stateContainer.updateInfo.updateStarted/*settings !== undefined*/)
+            if (settings !== undefined || !this.app.stateContainer.updateInfo.updateStarted)
                 cnt = '<p style="color: red">Информация не найдена!</p>';
         }
         else cntIsSet = true;

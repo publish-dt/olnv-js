@@ -3,15 +3,15 @@ import Router from './router.js';
 import StateContainer from './state.js';
 import Search from './search.js';
 import Views from './views.js';
+import Cld from './cld.js';
 
 class App {
 	constructor() {
 		this.appName = 'Откровения людям Нового века';
-		this.router = new Router(this);
-		this.myDB = new DB(this);
-		this.search = new Search(this);
-		this.views = new Views(this);
 
+		this.configApp = {
+			minYear: 2004
+		};
 		this.catalogs = {
 			dict: '618028f53fbe9a7a22fa9e82',
 			tolk: '55d6a586b6b9a45a700f9eee',
@@ -94,10 +94,16 @@ class App {
 
 		// для управления состоянием приложения
 		this.stateContainer = new StateContainer();
+
+		this.router = new Router(this);
+		this.myDB = new DB(this);
+		this.search = new Search(this);
+		this.views = new Views(this);
+		this.cld = new Cld(this);
 	}
 
 	async init() {
-
+		
 		/** Заполняем блок Обновления */
 		const isLastCheckGood = JSON.parse(localStorage.getItem('olnvjs_isLastCheckGood'));
 
@@ -114,16 +120,23 @@ class App {
 		this.stateContainer.updateInfo.lastUpdated = lastUpdated;
 		this.buildBlockUpdate(isLastCheckGood, lastCheck, lastUpdated);
 
+		this.stateContainer.lastTolk = JSON.parse(localStorage.getItem('olnvjs_lastTolk'));
+		this.stateContainer.lastPoem = JSON.parse(localStorage.getItem('olnvjs_lastPoem'));
+
+
 		window.mainContEl = document.getElementById('main-cont');
 		window.quoteBlockEl = document.getElementById('quote-block');
 		window.formEl = document.getElementById('search');
 		window.percentUpdatedEl = document.getElementById('percent-updated');
+		window.CldEl = document.getElementById('caleandar');
 
 		const isExist = await Dexie.exists('OtkDB');
 		if (!isExist)
 			createDB();
 
 		this.myDB.fillDb();
+
+		this.cld.buildCalendar();
 
 
 		/** получаем последнюю открытую пользователем страницу */
@@ -234,7 +247,8 @@ window.onclick = async function (event) {
 		}
 	}
 	else if (targetEl.type === "button") {
-		app.myDB.fillDb();
+		const olnvUpdate = targetEl.dataset.olnvUpdate;
+		if (olnvUpdate === 'check') app.myDB.fillDb();
     }
 }
 
@@ -269,3 +283,15 @@ window.onsubmit = async function (event) {
 
 	//app.setHistory(state);
 };
+
+window.onChangeCld = function (adjuster) {
+	app.cld.onChangeCld(adjuster);
+}
+
+window.onChangeMonth = async function (month) {
+	app.cld.onChangeMonth(month);
+}
+
+window.onChangeYear = async function (year) {
+	app.cld.onChangeYear(year);
+}

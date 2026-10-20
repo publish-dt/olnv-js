@@ -95,8 +95,8 @@ async function fillInfos(serviceDwld, serviceData, url, app) {
 		try {
 			const files = await downloadAndUnzip(url + `/${nameZip}.zip`);
 			if (files !== undefined && files.length > 0) {
-				let lastTolk = JSON.parse(localStorage.getItem('olnvjs_lastTolk'));
-				let lastPoem = JSON.parse(localStorage.getItem('olnvjs_lastPoem'));
+				let lastTolk = this.app.stateContainer.lastTolk;// JSON.parse(localStorage.getItem('olnvjs_lastTolk'));
+				let lastPoem = this.app.stateContainer.lastPoem;// JSON.parse(localStorage.getItem('olnvjs_lastPoem'));
 				const lastTolkStore = lastTolk;
 				const lastPoemStore = lastPoem;
 
@@ -170,8 +170,14 @@ async function fillInfos(serviceDwld, serviceData, url, app) {
 					percentUpdatedEl.innerHTML = '';
 
 					// кэшируем основные данные последнего Катрена и Послания
-					if (lastPoem) localStorage.setItem('olnvjs_lastPoem', JSON.stringify(lastPoem));
-					if (lastTolk) localStorage.setItem('olnvjs_lastTolk', JSON.stringify(lastTolk));
+					if (lastPoem) {
+						this.app.stateContainer.lastPoem = lastPoem;
+						localStorage.setItem('olnvjs_lastPoem', JSON.stringify(lastPoem));
+					}
+					if (lastTolk) {
+						this.app.stateContainer.lastTolk = lastTolk;
+						localStorage.setItem('olnvjs_lastTolk', JSON.stringify(lastTolk));
+					}
 
 					res.numberNewData = numberNewData;
 					res.numberChangeData = numberChangeData;

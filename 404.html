@@ -11,8 +11,9 @@
     <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
 
     <link rel="stylesheet" href="css/lib/bootstrap.min.css" />
-
     <link rel="stylesheet" type="text/css" href="css/style.css">
+    <link rel="stylesheet" type="text/css" href="css/lib/calendar.css">
+    <link rel="stylesheet" type="text/css" href="css/cld-otk.css">
 
     <!--<script src="https://cdn.jsdelivr.net/npm/core-js-bundle@3.41.0/minified.min.js" nomodule></script>-->
 
@@ -116,6 +117,26 @@
                             <div class="clear"></div>
                         </div>
 
+
+                        <!--КАЛЕНДАРЬ-->
+                        <div class="razdel">
+                            <h2><span id="spinner-cld" class="bi-spinner-blue"></span>Послания за <span id="cld-title"></span></h2>
+                            <div class="kalendar">
+                                <div id="caleandar"></div>
+                                <div class="select-poslan">
+                                    <span id="goto" class="txt-blue goto">перейти к</span>
+                                    <select id="cld-month" onchange="onChangeMonth(this.value)" class="style-select select-month">
+                                        <option selected value="-1">месяцу...</option>
+                                        <option value="1">Январь</option><option value="2">Февраль</option><option value="3">Март</option><option value="4">Апрель</option><option value="5">Май</option><option value="6">Июнь</option><option value="7">Июль</option><option value="8">Август</option><option value="9">Сентябрь</option><option value="10">Октябрь</option><option value="11">Ноябрь</option><option value="12">Декабрь</option>
+                                    </select>
+                                    <select id="cld-year" onchange="onChangeYear(this.value)" class="style-select select-year">
+                                        <option selected value="-1">года...</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="clear"></div>
+                        </div>
+
                         <!--Обновления-->
                         <div class="razdel">
                             <h2><span id="spinner-updated" class="bi-spinner"></span>Обновления<span id="percent-updated"></span></h2>
@@ -124,7 +145,7 @@
                             <div class="txt-blue lh-block">Последнее обновление: <span id="last-updated" class="txt2 txt-gray" title="Время последнего получения новой информации"></span></div>
                             <br />
                             <div class="txt-blue registration-link">
-                                <button type="button" class="btn btn-primary style-select" title="Проверить наличие новой информации">Проверить</button>
+                                <button type="button" data-olnv-update="check" class="btn btn-primary style-select" title="Проверить наличие новой информации">Проверить</button>
                             </div>
                         </div>
                         <div class="clear"></div>
@@ -162,6 +183,7 @@
     
     <script src="js/lib/jquery-2.1.4.min.js"></script>
     <script src="js/lib/bootstrap.min.js"></script>
+    <script type="text/javascript" src="js/lib/calendar.js"></script>
 
     <script src="js/global.js"></script>
     <script type="module" src="js/app.js"></script>

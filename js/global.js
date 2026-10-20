@@ -1,4 +1,4 @@
-window.verApp = '1.0.0-alpha10';
+window.verApp = '1.0.0-alpha11';
 window.netOffline = undefined;
 
 window.onerror = function (message, url, line, col, error) {
@@ -106,6 +106,7 @@ function intToRoman(num) {
     return result;
 }
 
+
 /** Форматирование даты */
 function strToDate(date) {
     return new Date(date);
@@ -122,6 +123,25 @@ const toDateTime = new Intl.DateTimeFormat('ru-RU', {
     hour: 'numeric',
     minute: '2-digit'
 });
+/** Формат даты в yyyy/MM/dd */
+function formatDateCld(date) {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0'); // месяц с 0 до 11
+    const dd = String(date.getDate()).padStart(2, '0');
+
+    return `${yyyy}/${mm}/${dd}`;
+}
+/** Получаем дату из path */
+function getDateFromPath(path) {
+    const matchPath = path.match(/(?<prefix>.*\/)?(\d{2}-)?(?<day>\d{2})\.(?<month>\d{2})\.(?<year>\d{2})(_\d{1})?/);
+    if (matchPath) {
+        const day = matchPath.groups["day"];
+        const month = matchPath.groups["month"];
+        const year = matchPath.groups["year"];
+        if (day && month && year)
+            return new Date(Number('20' + year), Number(month) - 1, Number(day));
+    }
+}
 
 
 function sleep(ms) {
@@ -161,3 +181,5 @@ function clearAllData() {
 
 footerYearEl = document.getElementById('footer-year');
 footerYearEl.innerHTML = (new Date()).getFullYear();
+
+const months = ["январь", "февраль", "март", "апрель", "май", "июнь", "июль", "август", "сентябрь", "октябрь", "ноябрь", "декабрь"];
