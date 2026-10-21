@@ -20,8 +20,7 @@ class DB {
 		const lastCheck = new Date();
 
 
-		// 'https://cors-anywhere.herokuapp.com/https://otk-data.web.app'    http://otk-data.website.yandexcloud.net
-		const url = 'https://publish-dt.github.io/otk-data/exp'; // 'data'; // 'https://otk-data.pages.dev'; // 
+		const url = this.app.configApp.urlUpdate;
 
 		let isLastCheckGood;
 		let lastUpdated;

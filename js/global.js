@@ -1,4 +1,4 @@
-window.verApp = '1.0.0-alpha12';
+window.verApp = '1.0.0-alpha13';
 window.netOffline = undefined;
 
 window.onerror = function (message, url, line, col, error) {
@@ -188,3 +188,4 @@ footerYearEl = document.getElementById('footer-year');
 footerYearEl.innerHTML = (new Date()).getFullYear();
 
 const months = ["январь", "февраль", "март", "апрель", "май", "июнь", "июль", "август", "сентябрь", "октябрь", "ноябрь", "декабрь"];
+

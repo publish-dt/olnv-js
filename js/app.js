@@ -4,13 +4,17 @@ import StateContainer from './state.js';
 import Search from './search.js';
 import Views from './views.js';
 import Cld from './cld.js';
+import Countdown from './countdown.js';
 
 class App {
 	constructor() {
 		this.appName = 'Откровения людям Нового века';
 
 		this.configApp = {
-			minYear: 2004
+			minYear: 2004,
+			// 'https://cors-anywhere.herokuapp.com/https://otk-data.web.app'    http://otk-data.website.yandexcloud.net
+			urlUpdate: 'https://otk-data.website.yandexcloud.net', // 'data', // 'https://otk-data.pages.dev', //
+			countdown: ["03:00", "11:00", "19:00"], // список времени обратного отсчёта до Посыла (результат отображается на сайте в секции "Обратный отсчёт")
 		};
 		this.catalogs = {
 			dict: '618028f53fbe9a7a22fa9e82',
@@ -123,10 +127,11 @@ class App {
 		this.search = new Search(this);
 		this.views = new Views(this);
 		this.cld = new Cld(this);
+		this.countdown = new Countdown(this);
 	}
 
 	async init() {
-		
+
 		/** Заполняем блок Обновления */
 		const isLastCheckGood = JSON.parse(localStorage.getItem('olnvjs_isLastCheckGood'));
 
@@ -163,21 +168,24 @@ class App {
 		this.cld.buildCalendar();
 
 		/** обратный отсчёт */
-		this.servTime = new Date(); //data.ServerTime время с сервера
+		/*this.servTime = undefined; // время с сервера
 		this.timeleft = -1; // (в секундах) сколько осталось секунд до ближайшего Посыла
-		this.showBlock = true; //data.ShowBlock вкл/выкл отображение блока обратного отсчёта
+		this.showBlock = false; // вкл/выкл отображение блока обратного отсчёта
 		//diff = 0; // разница между временем на клиенте (в браузере) и на сервере
 		this.countStartPosyl = 0; // сколько прошо времени с момента начала Посыла
 		//countFromLastUpdate = 0; // сколько прошло времени с последнего обновления
 		//rndLeft = 0;
 		this.rndCounter = Math.floor(Math.random() * (300 - 0 + 1)) + 0; // чтобы не в одно и тоже время все клиенты синхронизировали время обратного отсчёта
 		this.period = 5000; // интервал времени (в сек.) для обновления в отображении обратного отсчёта
-		//timerOn = false; // признак активности таймера обратного отсчёта
+		this.timerOn = false; // признак активности таймера обратного отсчёта
 		this.procBigDiff = false; // начат процесс получения времени с сервера, т.к. сайт находился в спящем режиме
 		this.isDebugTimeleft = true; // вкл./выкл. отладчик обратного отсчёта
-		this.localTime = new Date();
+		this.localTime = undefined;*/
 
-		setInterval(this.countdown(this), this.period);
+		this.countdown.processJsonCountdown();
+		/*this.countdown();
+		const countdownFn = this.countdown.bind(this);
+		setInterval(countdownFn, this.period);*/
 
 
 		/** получаем последнюю открытую пользователем страницу */
@@ -225,66 +233,6 @@ class App {
 
 		const lastlastUpdatedEl = document.getElementById('last-updated');
 		lastlastUpdatedEl.innerHTML = lastUpdated ? toDateTime.format(lastUpdated) : '--';
-	}
-
-	/** Обратный отсчёт до Посыла */
-	countdown(app) {
-
-		//countFromLastUpdate += this.period / 1000;
-		this.countStartPosyl += this.period / 1000;
-
-		let today = 0;
-		let thour = !app.showBlock ? 0 : Math.floor(app.timeleft / 3600);
-		let tmin = !app.showBlock ? 0 : Math.floor(app.timeleft / 60 - 60 * thour);
-		let tsec = !app.showBlock ? 0 : app.timeleft % 60;
-
-		if (app.showBlock) {
-			const timestr = (today > 0 ? '<span class="txt-gray">' + today + '</span>' + declOfNum(today, [' день ', ' дня ', ' дней ']) : '') + '<span class="txt-gray">' + thour + '</span>' + declOfNum(thour, [' час ', ' часа ', ' часов ']) + '<span class="txt-gray">' + tmin + '</span>' + declOfNum(tmin, [' минута ', ' минуты ', ' минут ']) + '<span class="txt-gray">' + tsec + '</span>' + " сек.";
-			document.getElementById('timeleft').innerHTML = timestr;
-			if (timeleftBlock.classList.contains('hidden')) {
-				timeleftBlock.classList.remove('hidden');
-			}
-		}
-		if (app.timeleft >= 0) {
-			if (app.timeleft === 0 && app.showBlock) {
-				app.showBlock = false;
-				app.countStartPosyl = 0;
-			}
-			app.timeleft -= app.period / 1000;
-		}
-
-		if (!app.showBlock && app.countStartPosyl >= (301 + app.rndCounter)) { // через 5+rnd минут после начала Посыла синхронизируем (получаем остаток времени до следующего Посыла)
-			if (app.isDebugTimeleft) console.log('синхронизация через ~5 мин. после начала Посыла');
-
-			//htmx.ajax('GET', '/ext/countdown', { handler: processJsonCountdown }); // нужно делать запрос, чтобы получить время следующего Посыла
-		}
-
-
-		let diffServ = new Date() - app.servTime;
-		let diffLocal = new Date() - app.localTime;
-		// если разница во времени между сохранённой ранее локальной/клиентской датой и текущей локальной датой больше чем 5+5 сек, т.е. страница сайта была долго в спящем режиме (свёрнута или комп. был в спящем режиме)
-		if (diffLocal > 10000) {
-			if (app.procBigDiff === false /*&& checkIntervalAddUser(true)*/) { // когда окно браузера с сайтом свёрнуто, то js выполняет код раз в минуту, поэтому проверяем ещё и активность пользователя перед отправкой запроса
-				app.procBigDiff = true;
-				if (app.isDebugTimeleft) console.log('разница - ' + diffLocal + ' время = ' + new Date());
-
-				//htmx.ajax('GET', '/ext/countdown', { handler: processJsonCountdown });
-			}
-		}
-		else {
-			app.localTime = new Date();
-
-			/*if (checkIntervalAddUser()) {
-				htmx.ajax('POST', '/ext/addusr', { source: '#dummy' }); // каждые 5 мин. (активные intervalAddUser) обновляем активность пользователя на сервере
-			}*/
-		}
-
-		app.servTime.setSeconds(app.servTime.getSeconds() + app.period / 1000); // поддерживаем в актуальном состоянии время, полученное с сервера
-
-		if (app.isDebugTimeleft) {
-			console.log('timeleft = ' + app.timeleft + /*'; rndLeft = ' + rndLeft + '; countFromLastUpdate = ' + countFromLastUpdate*/ + '; countStartPosyl = ' + app.countStartPosyl + '; rndCounter = ' + app.rndCounter + '; diffLocal = ' + diffLocal + '; diffServ = ' + diffServ);
-			console.log('время = ' + new Date());
-		}/**/
 	}
 }
 
