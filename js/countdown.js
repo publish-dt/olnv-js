@@ -21,7 +21,7 @@ class Countdown {
 	}
 
 	/** Обратный отсчёт до Посыла */
-	countdown() {
+	async countdown() {
 		this.countStartPosyl += this.period / 1000;
 
 		let today = 0;
@@ -49,20 +49,20 @@ class Countdown {
 			if (this.isDebugTimeleft) console.log('синхронизация через ~5 мин. после начала Посыла');
 
 			//htmx.ajax('GET', '/ext/countdown', { handler: processJsonCountdown }); // нужно делать запрос, чтобы получить время следующего Посыла
-			this.processJsonCountdown();
+			await this.processJsonCountdown();
 		}
 
 
-		let diffServ = new Date() - this.servTime;
+		//let diffServ = new Date() - this.servTime;
 		let diffLocal = new Date() - this.localTime;
 		// если разница во времени между сохранённой ранее локальной/клиентской датой и текущей локальной датой больше чем 5+5 сек, т.е. страница сайта была долго в спящем режиме (свёрнута или комп. был в спящем режиме)
-		if (diffLocal > 10000) {
+		if (diffLocal > 10000) { // разница (diffLocal) всегда будет около 5000
 			if (this.procBigDiff === false /*&& checkIntervalAddUser(true)*/) { // когда окно браузера с сайтом свёрнуто, то js выполняет код раз в минуту, поэтому проверяем ещё и активность пользователя перед отправкой запроса
 				this.procBigDiff = true;
 				if (this.isDebugTimeleft) console.log('разница - ' + diffLocal + ' время = ' + new Date());
 
 				//htmx.ajax('GET', '/ext/countdown', { handler: processJsonCountdown });
-				this.processJsonCountdown();
+				await this.processJsonCountdown();
 			}
 		}
 		else {
@@ -73,22 +73,23 @@ class Countdown {
 			}*/
 		}
 
-		this.servTime.setSeconds(this.servTime.getSeconds() + this.period / 1000); // поддерживаем в актуальном состоянии время, полученное с сервера
-
 		if (this.isDebugTimeleft) {
-			console.log('timeleft = ' + this.timeleft + /*'; rndLeft = ' + rndLeft + '; countFromLastUpdate = ' + countFromLastUpdate*/ + '; countStartPosyl = ' + this.countStartPosyl + '; rndCounter = ' + this.rndCounter + '; diffLocal = ' + diffLocal + '; diffServ = ' + diffServ);
+			console.log('timeleft = ' + this.timeleft + '; servTime = ' + this.servTime + '; countStartPosyl = ' + this.countStartPosyl + '; rndCounter = ' + this.rndCounter + '; diffLocal = ' + diffLocal /*+ '; rndLeft = ' + rndLeft + '; countFromLastUpdate = ' + countFromLastUpdate + '; diffServ = ' + diffServ*/);
 			console.log('время = ' + new Date());
 		}/**/
+
+		this.servTime.setSeconds(this.servTime.getSeconds() + this.period / 1000); // поддерживаем в актуальном состоянии время, полученное с сервера
 	}
 
-	processJsonCountdown(/*data, detail*/) {
-		const data = this.getTimeleft(); /*{
+	async processJsonCountdown(/*data, detail*/) {
+		const data = await this.getTimeleft(); /*{
 			ServerTime: new Date(),
 			TimeLeft: 10, // сколько секунд до следующего Посыла
 			ShowBlock: true, // если Посыл сейчас идёт (в течение 5 мин.), то = false
 			PassTime: 0 // здесь не ноль, а сколько секунд прошло с последнего Посыла
 		};*/
 		this.servTime = data.ServerTime;
+		this.localTime = data.LocalTime;
 		this.timeleft = data.TimeLeft;
 		this.showBlock = data.ShowBlock;
 		this.countStartPosyl = data.PassTime;
@@ -108,11 +109,11 @@ class Countdown {
 		}
 	}
 
-	getTimeleft() {
-		const res = this.getPrevNext();
-		const now = toMoscowDate(); // текущее московское время (даже если приложение выполняется не в московском времени)
+	async getTimeleft() {
+		const res = await this.getPrevNext();
 		if (res) {
-			var nowDate = new Date(now);
+			const now = res.nowMoscow;// toMoscowDate(); // текущее московское время (даже если приложение выполняется не в московском времени)
+			const nowDate = new Date(now);
 			const nowDateSeconds = Math.floor(nowDate.getTime()/1000);
 
 			let tmleft = res.pointNext - nowDateSeconds;
@@ -124,25 +125,28 @@ class Countdown {
 			const passTime = Math.abs(nowDateSeconds - res.pointPrev);
 
 			return {
-				ServerTime: new Date(now), // это не московское время, а локальное клиента
+				ServerTime: res.nowServer, // это не московское время, а с сервера в таймзоне клиента
+				LocalTime: res.nowLocal, // это не московское время, а локальное клиента
 				TimeLeft: tmleft, // сколько секунд до следующего Посыла
 				ShowBlock: passTime < this.secPassPosylShow ? false : true, // если Посыл сейчас идёт (в течение 5 мин.), то = false
 				PassTime: passTime // сколько секунд прошло с последнего Посыла
 			};
 		}
 		else return {
-			ServerTime: new Date(now),
+			ServerTime: new Date(),
 			TimeLeft: -1,
 			ShowBlock: false,
 			PassTime: 0
 		};
 	}
 
-	getPrevNext() {
+	async getPrevNext() {
 
 		const countdownList = this.app.configApp.countdown;
 		if (this.app.configApp.countdown && this.app.configApp.countdown.length > 0) {
-			const now = toMoscowDate();
+			const nowServer = await this.getServerTime();
+			const nowLocal = new Date();
+			const now = toMoscowDate(nowServer);
 			const nowDate = new Date(now);
 			nowDate.setHours(0, 0, 0, 0);
 
@@ -176,12 +180,28 @@ class Countdown {
 				dateNext.setSeconds(next);// nowDateNext.Add(next);
 				if (now > datePrev && now < dateNext) // выбираем ближайшую большую сигнальную точку
 				{
-					return { pointPrev: Math.floor(datePrev.getTime() / 1000), pointNext: Math.floor(dateNext.getTime()/1000) };
+					return { pointPrev: Math.floor(datePrev.getTime() / 1000), pointNext: Math.floor(dateNext.getTime() / 1000), nowMoscow: now, nowLocal: nowLocal, nowServer: nowServer };
 				}
 			}
 		}
 
 		return;
+	}
+
+	async getServerTime() {
+		// https://timezonedb.com/
+        try {
+			const timeZoneName = Intl.DateTimeFormat().resolvedOptions().timeZone;
+			const res = await download('https://timeapi.io/api/Time/current/zone?timeZone=' + timeZoneName);
+			//const resUTC = await download('https://timeapi.io/api/v1/time/current/utc');
+			//const resUTC = await download('https://timeapi.io/api/v1/time/current/unix_ms'); // https://yandex.com/time/sync.json не работают, т.к. CORS
+			const date = new Date(res.dateTime); // unix_timestamp utc_time
+			const localTime = new Date();
+			console.log('Разница между локальным и серверным временем = ' + (localTime - date));
+			return date;
+		} catch (e) {
+			return new Date();
+        }
 	}
 
 	/**

@@ -1,4 +1,4 @@
-window.verApp = '1.0.0-alpha14';
+window.verApp = '1.0.0-alpha15';
 window.netOffline = undefined;
 
 window.onerror = function (message, url, line, col, error) {
@@ -197,6 +197,24 @@ function clearAllData() {
         caches.delete('cnt');
     }
 }
+
+async function download(url) {
+    try {
+        if (url !== undefined) {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`Ошибка загрузки ${url}`);
+
+            const data = await response.json();
+
+            return data;
+        }
+    } catch (error) {
+        if (error.message === 'Failed to fetch')
+            console.log(`Ресурс ${url} недоступен:`, error.message);
+        else console.error(`Ошибка при скачивании ${url}:`, error);
+    }
+}
+
 
 footerYearEl = document.getElementById('footer-year');
 footerYearEl.innerHTML = (new Date()).getFullYear();

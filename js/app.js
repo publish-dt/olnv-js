@@ -14,7 +14,7 @@ class App {
 			minYear: 2004,
 			// 'https://cors-anywhere.herokuapp.com/https://otk-data.web.app'    http://otk-data.website.yandexcloud.net
 			urlUpdate: 'https://otk-data.website.yandexcloud.net', // 'data', // 'https://otk-data.pages.dev', //
-			countdown: ["03:00", "11:00", /*"17:59",*/ "19:00"], // список времени обратного отсчёта до Посыла (результат отображается на сайте в секции "Обратный отсчёт")
+			countdown: [/*"01:24",*/ "03:00", "11:00", "19:00"], // список времени обратного отсчёта до Посыла (результат отображается на сайте в секции "Обратный отсчёт")
 		};
 		this.catalogs = {
 			dict: '618028f53fbe9a7a22fa9e82',
