@@ -14,7 +14,7 @@ class App {
 			minYear: 2004,
 			// 'https://cors-anywhere.herokuapp.com/https://otk-data.web.app'    http://otk-data.website.yandexcloud.net
 			urlUpdate: 'https://otk-data.website.yandexcloud.net', // 'data', // 'https://otk-data.pages.dev', //
-			countdown: ["03:00", "11:00", "19:00"], // список времени обратного отсчёта до Посыла (результат отображается на сайте в секции "Обратный отсчёт")
+			countdown: ["03:00", "11:00", /*"17:59",*/ "19:00"], // список времени обратного отсчёта до Посыла (результат отображается на сайте в секции "Обратный отсчёт")
 		};
 		this.catalogs = {
 			dict: '618028f53fbe9a7a22fa9e82',
@@ -132,75 +132,63 @@ class App {
 
 	async init() {
 
-		/** Заполняем блок Обновления */
-		const isLastCheckGood = JSON.parse(localStorage.getItem('olnvjs_isLastCheckGood'));
+        try {
 
-		let lastCheck = localStorage.getItem('olnvjs_lastCheck');
-		if (lastCheck)
-			lastCheck = new Date(lastCheck.replace(/"/g, ''));
+			/** Заполняем блок Обновления */
+			const isLastCheckGood = JSON.parse(localStorage.getItem('olnvjs_isLastCheckGood'));
 
-		let lastUpdated = localStorage.getItem('olnvjs_lastUpdated');
-		if (lastUpdated)
-			lastUpdated = new Date(lastUpdated.replace(/"/g, ''));
+			let lastCheck = localStorage.getItem('olnvjs_lastCheck');
+			if (lastCheck)
+				lastCheck = new Date(lastCheck.replace(/"/g, ''));
 
-		this.stateContainer.updateInfo.isLastCheckGood = isLastCheckGood;
-		this.stateContainer.updateInfo.lastCheck = lastCheck;
-		this.stateContainer.updateInfo.lastUpdated = lastUpdated;
-		this.buildBlockUpdate(isLastCheckGood, lastCheck, lastUpdated);
+			let lastUpdated = localStorage.getItem('olnvjs_lastUpdated');
+			if (lastUpdated)
+				lastUpdated = new Date(lastUpdated.replace(/"/g, ''));
 
-		this.stateContainer.lastTolk = JSON.parse(localStorage.getItem('olnvjs_lastTolk'));
-		this.stateContainer.lastPoem = JSON.parse(localStorage.getItem('olnvjs_lastPoem'));
+			this.stateContainer.updateInfo.isLastCheckGood = isLastCheckGood;
+			this.stateContainer.updateInfo.lastCheck = lastCheck;
+			this.stateContainer.updateInfo.lastUpdated = lastUpdated;
+			this.buildBlockUpdate(isLastCheckGood, lastCheck, lastUpdated);
 
-
-		window.mainContEl = document.getElementById('main-cont');
-		window.quoteBlockEl = document.getElementById('quote-block');
-		window.formEl = document.getElementById('search');
-		window.percentUpdatedEl = document.getElementById('percent-updated');
-		window.CldEl = document.getElementById('caleandar');
-		window.timeleftBlock = document.getElementById('timeleft-block');
-
-		const isExist = await Dexie.exists('OtkDB');
-		if (!isExist)
-			createDB();
-
-		this.myDB.fillDb();
-
-		this.cld.buildCalendar();
-
-		/** обратный отсчёт */
-		/*this.servTime = undefined; // время с сервера
-		this.timeleft = -1; // (в секундах) сколько осталось секунд до ближайшего Посыла
-		this.showBlock = false; // вкл/выкл отображение блока обратного отсчёта
-		//diff = 0; // разница между временем на клиенте (в браузере) и на сервере
-		this.countStartPosyl = 0; // сколько прошо времени с момента начала Посыла
-		//countFromLastUpdate = 0; // сколько прошло времени с последнего обновления
-		//rndLeft = 0;
-		this.rndCounter = Math.floor(Math.random() * (300 - 0 + 1)) + 0; // чтобы не в одно и тоже время все клиенты синхронизировали время обратного отсчёта
-		this.period = 5000; // интервал времени (в сек.) для обновления в отображении обратного отсчёта
-		this.timerOn = false; // признак активности таймера обратного отсчёта
-		this.procBigDiff = false; // начат процесс получения времени с сервера, т.к. сайт находился в спящем режиме
-		this.isDebugTimeleft = true; // вкл./выкл. отладчик обратного отсчёта
-		this.localTime = undefined;*/
-
-		this.countdown.processJsonCountdown();
-		/*this.countdown();
-		const countdownFn = this.countdown.bind(this);
-		setInterval(countdownFn, this.period);*/
+			this.stateContainer.lastTolk = JSON.parse(localStorage.getItem('olnvjs_lastTolk'));
+			this.stateContainer.lastPoem = JSON.parse(localStorage.getItem('olnvjs_lastPoem'));
 
 
-		/** получаем последнюю открытую пользователем страницу */
-		let pathChanged = false;
-		this.basePath = this.getPath(document.baseURI, true);
-		let path = this.getPath(location.href);
-		/*if (path === 'index') {
-			const bookmarks = await dbApp.settings.get('bookmarks');
-			if (bookmarks) {
-				path = bookmarks['#lastPage#'];
-				pathChanged = true;
-			}
-		}*/
-		const state = await this.router.navigateToPath(path, true);
-		//if (pathChanged) this.setHistory(state);
+			window.mainContEl = document.getElementById('main-cont');
+			window.quoteBlockEl = document.getElementById('quote-block');
+			window.formEl = document.getElementById('search');
+			window.percentUpdatedEl = document.getElementById('percent-updated');
+			window.CldEl = document.getElementById('caleandar');
+			window.timeleftBlock = document.getElementById('timeleft-block');
+
+			const isExist = await Dexie.exists('OtkDB');
+			if (!isExist)
+				createDB();
+
+			this.myDB.fillDb();
+
+			this.cld.buildCalendar();
+
+			this.countdown.processJsonCountdown();
+
+
+			/** получаем последнюю открытую пользователем страницу */
+			let pathChanged = false;
+			this.basePath = this.getPath(document.baseURI, true);
+			let path = this.getPath(location.href);
+			/*if (path === 'index') {
+				const bookmarks = await dbApp.settings.get('bookmarks');
+				if (bookmarks) {
+					path = bookmarks['#lastPage#'];
+					pathChanged = true;
+				}
+			}*/
+			const state = await this.router.navigateToPath(path, true);
+			//if (pathChanged) this.setHistory(state);
+
+		} catch (e) {
+			console.error(e);
+        }
 	}
 
 	getPath(url, isBase) {

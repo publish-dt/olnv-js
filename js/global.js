@@ -1,4 +1,4 @@
-window.verApp = '1.0.0-alpha13';
+window.verApp = '1.0.0-alpha14';
 window.netOffline = undefined;
 
 window.onerror = function (message, url, line, col, error) {
@@ -112,10 +112,24 @@ function intToRoman(num) {
 }
 
 
-/** Форматирование даты */
-function strToDate(date) {
-    return new Date(date);
+/** Возвращаем московское время */
+function toMoscowDate(date) {
+    let nowLocal;
+    if (date) nowLocal = new Date(date);
+    else nowLocal = new Date();
+    const targetOffset = 180; // UTC+3
+    const adjustedTimestamp = nowLocal.getTime() + (nowLocal.getTimezoneOffset() * 60 * 1000) + (targetOffset * 60 * 1000);
+    const now = new Date(adjustedTimestamp); // текущее московское время (даже если приложение выполняется не в московском времени)
+
+    return now;
 }
+/** Возвращаем московское время */
+function strToDate(date) {
+    const dateLocal = new Date(date);
+    const dateMoscow = toMoscowDate(dateLocal);
+    return dateMoscow;
+}
+/** Форматирование даты */
 const toShortMoscowDate = new Intl.DateTimeFormat('ru-RU', {
     timeZone: 'Europe/Moscow',
     year: "2-digit",

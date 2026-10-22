@@ -11,7 +11,8 @@ class Countdown {
 		this.showBlock = false; // вкл/выкл отображение блока обратного отсчёта
 		//diff = 0; // разница между временем на клиенте (в браузере) и на сервере
 		this.countStartPosyl = 0; // сколько прошо времени с момента начала Посыла
-		this.rndCounter = Math.floor(Math.random() * (20/*300*/ - 0 + 1)) + 0; // чтобы не в одно и тоже время все клиенты синхронизировали время обратного отсчёта
+		this.secPassPosylShow = 300; // через сколько времени, после начала Посыла, отображать блок обратного отсчёта
+		this.rndCounter = Math.floor(Math.random() * (this.secPassPosylShow - 0 + 1)) + 0; // чтобы не в одно и тоже время все клиенты синхронизировали время обратного отсчёта
 		this.period = 5000; // интервал времени (в сек.) для обновления в отображении обратного отсчёта
 		this.timerOn = false; // признак активности таймера обратного отсчёта
 		this.procBigDiff = false; // начат процесс получения времени с сервера, т.к. сайт находился в спящем режиме
@@ -44,7 +45,7 @@ class Countdown {
 			this.timeleft -= this.period / 1000;
 		}
 
-		if (!this.showBlock && this.countStartPosyl >= (0/*301*/ + this.rndCounter)) { // через 5+rnd минут после начала Посыла синхронизируем (получаем остаток времени до следующего Посыла)
+		if (!this.showBlock && this.countStartPosyl >= (this.secPassPosylShow + 1 + this.rndCounter)) { // через 5+rnd минут после начала Посыла синхронизируем (получаем остаток времени до следующего Посыла)
 			if (this.isDebugTimeleft) console.log('синхронизация через ~5 мин. после начала Посыла');
 
 			//htmx.ajax('GET', '/ext/countdown', { handler: processJsonCountdown }); // нужно делать запрос, чтобы получить время следующего Посыла
@@ -99,20 +100,20 @@ class Countdown {
 		this.localTime = new Date();
 
 		if (this.timerOn === false) {
+			this.timerOn = true;
 			this.countdown();
 			const countdownFn = this.countdown.bind(this);
 			setInterval(countdownFn, this.period);
-			this.timerOn = true;
 			if (this.isDebugTimeleft) console.log('включен таймпер обновления обратного отсчёта');
 		}
 	}
 
 	getTimeleft() {
 		const res = this.getPrevNext();
-		const now = new Date();
+		const now = toMoscowDate(); // текущее московское время (даже если приложение выполняется не в московском времени)
 		if (res) {
 			var nowDate = new Date(now);
-			const nowDateSeconds = Math.floor(nowDate.getTime()/1000); // HelpersG.AnyToMoscow(DateTime.Now).DateTime; // текущее московское время (даже если приложение выполняется не в московском времени)
+			const nowDateSeconds = Math.floor(nowDate.getTime()/1000);
 
 			let tmleft = res.pointNext - nowDateSeconds;
 
@@ -123,9 +124,9 @@ class Countdown {
 			const passTime = Math.abs(nowDateSeconds - res.pointPrev);
 
 			return {
-				ServerTime: new Date(now),
+				ServerTime: new Date(now), // это не московское время, а локальное клиента
 				TimeLeft: tmleft, // сколько секунд до следующего Посыла
-				ShowBlock: passTime < 300 ? false : true, // если Посыл сейчас идёт (в течение 5 мин.), то = false
+				ShowBlock: passTime < this.secPassPosylShow ? false : true, // если Посыл сейчас идёт (в течение 5 мин.), то = false
 				PassTime: passTime // сколько секунд прошло с последнего Посыла
 			};
 		}
@@ -141,7 +142,7 @@ class Countdown {
 
 		const countdownList = this.app.configApp.countdown;
 		if (this.app.configApp.countdown && this.app.configApp.countdown.length > 0) {
-			const now = new Date();//HelpersG.AnyToMoscow(DateTime.Now).DateTime; // текущее московское время (даже если приложение выполняется не в московском времени)
+			const now = toMoscowDate();
 			const nowDate = new Date(now);
 			nowDate.setHours(0, 0, 0, 0);
 

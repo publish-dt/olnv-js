@@ -55,10 +55,6 @@ class Search {
                             day = '';
                         }
                         if (isNaN(new Date(year, month - 1, day))) throw 'Формат даты не распознан.'; // это только для проверки даты
-                        /*// может не правильно искать, т.к. есть смещение зоны, т.е. текстовая дата может быть другой, т.е. надо преобразовать в дату с учётом зоны
-                        const dateUTC = new Date(Date.UTC(year, month - 1, day)); //new Date(year, month - 1, day);
-                        const isoDate = dateUTC.toISOString()
-                        searchString = isoDate.substring(0, isoDate.indexOf('T'));*/
                         searchString = `${year}-${month}-${day}`; // T - не надо, т.к. поиск по ММ.20ГГ не будет выполнен, кроме того когда будет без учёта регистра .toLowerCase(), то 'T' будет маленькой
                     } catch (e) {
                         console.error('Формат даты не распознан.');

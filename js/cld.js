@@ -28,7 +28,7 @@ class Cld {
             }
 
             if (!year || !month) {
-                const curDate = new Date();
+                const curDate = toMoscowDate();
                 month = this.maxCldMonth ? this.maxCldMonth : curDate.getMonth();
                 year = this.maxCldYear ? this.maxCldYear : curDate.getFullYear();
             }
@@ -42,8 +42,8 @@ class Cld {
             this.curCldMonth = month+1;
             this.curCldYear = year;
 
-            const dateEnd = /*HelpersG.AnyToMoscow*/(new Date(year, month, 1));
-            const dateStart = new Date(dateEnd);
+            const dateEnd = toMoscowDate(new Date(year, month, 1));
+            const dateStart = toMoscowDate(new Date(dateEnd));
             dateEnd.setMonth(dateEnd.getMonth() + 1);
 
             const infos = await db['infos']
@@ -124,7 +124,7 @@ class Cld {
         const year = date.getFullYear();
 
         const yearExist = false;
-        if (year >= this.minCldYear && year <= new Date().getFullYear()) { // проверяем, можно ли стрелками месяца перейти к след./пред. году, поскольку список годов ограничен
+        if (year >= this.minCldYear && year <= toMoscowDate().getFullYear()) { // проверяем, можно ли стрелками месяца перейти к след./пред. году, поскольку список годов ограничен
             await this.changeCalendar(month + 1, year);
         }
     }

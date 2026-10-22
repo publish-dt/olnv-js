@@ -81,7 +81,7 @@ class DB {
 		const res = {};
 
 		const lastDateChange = strToDate(serviceDwld.LastDateChange);
-		const lastDateChangeStore = (serviceData === undefined || serviceData.LastDateChange === undefined ? strToDate(0, 0, 0) : strToDate(serviceData.LastDateChange));
+		const lastDateChangeStore = (serviceData === undefined || serviceData.LastDateChange === undefined ? strToDate(new Date(0, 0, 0)) : strToDate(serviceData.LastDateChange));
 		if (serviceData === undefined || lastDateChange > lastDateChangeStore) {
 			let nameZip = serviceData === undefined || Math.round((lastDateChange - lastDateChangeStore) / (1000 * 60 * 60 * 24)) >= 7 ? "full" : "last";
 
