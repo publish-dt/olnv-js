@@ -18,6 +18,10 @@ class Countdown {
 		this.procBigDiff = false; // начат процесс получения времени с сервера, т.к. сайт находился в спящем режиме
 		this.isDebugTimeleft = true; // вкл./выкл. отладчик обратного отсчёта
 		this.localTime = undefined;
+
+		/** это для отслеживания, что пользоветель ещё активен на сайте */
+		this.startTime = new Date(); // время с начала нового отсчёта отслеживания активности
+		this.intervalAddUser = /*300000 -*/ 10000; // (млсек.) (чуть меньше 5-ти минут) продолжительность интервала, через которые будет периодически отправляться запрос на подтверждение активности пользователя. 300000 - длительность хэша _!UsersOnline_ (5 мин.); 10000 - это 5 сек. (берётся из period или из every 5s в hx-trigger) + 5 сек. запаса
 	}
 
 	/** Обратный отсчёт до Посыла */
@@ -31,8 +35,8 @@ class Countdown {
 
 		if (this.showBlock) {
 			let timestr = '--';
-			if (this.timeleft !== -1) timestr = (today > 0 ? '<span class="txt-gray">' + today + '</span>' + declOfNum(today, [' день ', ' дня ', ' дней ']) : '') + '<span class="txt-gray">' + thour + '</span>' + declOfNum(thour, [' час ', ' часа ', ' часов ']) + '<span class="txt-gray">' + tmin + '</span>' + declOfNum(tmin, [' минута ', ' минуты ', ' минут ']) + '<span class="txt-gray">' + tsec + '</span>' + " сек.";
-			document.getElementById('timeleft').innerHTML = timestr;
+			this.buildBlock(today, thour, tmin, tsec, this.timeleft, timestr);// if (this.timeleft !== -1) timestr = (today > 0 ? '<span class="txt-gray">' + today + '</span>' + declOfNum(today, [' день ', ' дня ', ' дней ']) : '') + '<span class="txt-gray">' + thour + '</span>' + declOfNum(thour, [' час ', ' часа ', ' часов ']) + '<span class="txt-gray">' + tmin + '</span>' + declOfNum(tmin, [' минута ', ' минуты ', ' минут ']) + '<span class="txt-gray">' + tsec + '</span>' + " сек.";
+			//document.getElementById('timeleft').innerHTML = timestr;
 			if (timeleftBlock.classList.contains('hidden')) {
 				timeleftBlock.classList.remove('hidden');
 			}
@@ -57,7 +61,8 @@ class Countdown {
 		let diffLocal = new Date() - this.localTime;
 		// если разница во времени между сохранённой ранее локальной/клиентской датой и текущей локальной датой больше чем 5+5 сек, т.е. страница сайта была долго в спящем режиме (свёрнута или комп. был в спящем режиме)
 		if (diffLocal > 10000) { // разница (diffLocal) всегда будет около 5000
-			if (this.procBigDiff === false /*&& checkIntervalAddUser(true)*/) { // когда окно браузера с сайтом свёрнуто, то js выполняет код раз в минуту, поэтому проверяем ещё и активность пользователя перед отправкой запроса
+			if (this.procBigDiff === false && this.checkIntervalAddUser(true)) { // когда окно браузера с сайтом свёрнуто, то js выполняет код раз в минуту, поэтому проверяем ещё и активность пользователя перед отправкой запроса, т.к. восстанавливать время надо только когда приложение активно
+				if (!this.showBlock && this.countStartPosyl < (this.secPassPosylShow + 1 + this.rndCounter)) this.buildBlock(0, 0, 0, 0); // при выводе компа/приложения из спящего режима в момент Посыла - надо обнулить счётчик на экране
 				this.procBigDiff = true;
 				if (this.isDebugTimeleft) console.log('разница - ' + diffLocal + ' время = ' + new Date());
 
@@ -68,7 +73,7 @@ class Countdown {
 		else {
 			this.localTime = new Date();
 
-			/*if (checkIntervalAddUser()) {
+			/*if (this.checkIntervalAddUser()) {
 				htmx.ajax('POST', '/ext/addusr', { source: '#dummy' }); // каждые 5 мин. (активные intervalAddUser) обновляем активность пользователя на сервере
 			}*/
 		}
@@ -79,6 +84,29 @@ class Countdown {
 		}/**/
 
 		this.servTime.setSeconds(this.servTime.getSeconds() + this.period / 1000); // поддерживаем в актуальном состоянии время, полученное с сервера
+	}
+
+	/**
+	 * Проверка активности пользователя на сайте
+	 * @param {any} noAddUser
+	 * @returns
+	 */
+	checkIntervalAddUser(noAddUser) {
+		const diffStart = new Date() - this.startTime;
+
+		if ((noAddUser || (!noAddUser && diffStart >= this.intervalAddUser)) && moveCounter > 0) {
+			if (/*!noAddUser &&*/ this.isDebugTimeleft) console.log('разница к старту активности пользователя - ' + diffStart + ' время = ' + new Date());
+
+			this.startTime = new Date();
+			moveCounter = 0;
+
+			return true;
+		}
+	}
+
+	buildBlock(today, thour, tmin, tsec, timeleft, timestr) {
+		if (timeleft !== -1) timestr = (today > 0 ? '<span class="txt-gray">' + today + '</span>' + declOfNum(today, [' день ', ' дня ', ' дней ']) : '') + '<span class="txt-gray">' + thour + '</span>' + declOfNum(thour, [' час ', ' часа ', ' часов ']) + '<span class="txt-gray">' + tmin + '</span>' + declOfNum(tmin, [' минута ', ' минуты ', ' минут ']) + '<span class="txt-gray">' + tsec + '</span>' + " сек.";
+		document.getElementById('timeleft').innerHTML = timestr;
 	}
 
 	async processJsonCountdown(/*data, detail*/) {
@@ -99,13 +127,15 @@ class Countdown {
 		if (this.isDebugTimeleft) console.log('diff = ' + diff);*/
 
 		this.localTime = new Date();
+		this.startTime = new Date();
+		moveCounter = 0;
 
 		if (this.timerOn === false) {
 			this.timerOn = true;
 			this.countdown();
 			const countdownFn = this.countdown.bind(this);
 			setInterval(countdownFn, this.period);
-			if (this.isDebugTimeleft) console.log('включен таймпер обновления обратного отсчёта');
+			if (this.isDebugTimeleft) console.log('включен таймер обновления обратного отсчёта');
 		}
 	}
 

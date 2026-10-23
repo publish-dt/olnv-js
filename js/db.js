@@ -12,6 +12,7 @@ class DB {
 		if (this.app.stateContainer.updateInfo.updateStarted)
 			return; // если загрузка архивов данных уже началась, то не запускаем её ещё раз
 
+		let res;
 		this.app.stateContainer.updateInfo.updateStarted = true;
 
 		const spinnerUpdatedEl = document.getElementById('spinner-updated');
@@ -31,7 +32,7 @@ class DB {
 			if (!isExist) createDB();
 			const serviceData = await db.settings.get('serviceData');
 
-			const res = await this.fillInfos(serviceDwld, serviceData, url, this.app);
+			res = await this.fillInfos(serviceDwld, serviceData, url, this.app);
 			await this.fillFiles(serviceDwld, serviceData, url, this.app);
 			await this.fillQuote(serviceDwld, serviceData, url, this.app);
 
@@ -75,6 +76,8 @@ class DB {
 			this.app.router.navigateToPath(this.app.getPath(location.href));
 
 		console.log(`В базе: ${db ? await db.infos.count() : 0} материалов`);
+
+		return res;
 	}
 
 	async fillInfos(serviceDwld, serviceData, url, app) {

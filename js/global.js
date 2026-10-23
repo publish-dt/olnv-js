@@ -1,5 +1,6 @@
-window.verApp = '1.0.0-alpha15';
+window.verApp = '1.0.0-alpha16';
 window.netOffline = undefined;
+window.moveCounter = 0; // счётчик движения мыши на странице, если =0, то пользователь не активен на странице
 
 window.onerror = function (message, url, line, col, error) {
 	alert(message + "\n В " + line + ":" + col + " на " + url);
@@ -216,7 +217,7 @@ async function download(url) {
 }
 
 
-footerYearEl = document.getElementById('footer-year');
+const footerYearEl = document.getElementById('footer-year');
 footerYearEl.innerHTML = (new Date()).getFullYear();
 
 const months = ["январь", "февраль", "март", "апрель", "май", "июнь", "июль", "август", "сентябрь", "октябрь", "ноябрь", "декабрь"];

@@ -14,7 +14,7 @@ class App {
 			minYear: 2004,
 			// 'https://cors-anywhere.herokuapp.com/https://otk-data.web.app'    http://otk-data.website.yandexcloud.net
 			urlUpdate: 'https://otk-data.website.yandexcloud.net', // 'data', // 'https://otk-data.pages.dev', //
-			countdown: [/*"01:24",*/ "03:00", "11:00", "19:00"], // список времени обратного отсчёта до Посыла (результат отображается на сайте в секции "Обратный отсчёт")
+			countdown: ["03:00", "11:00", /*"17:25",*/ "19:00"], // список времени обратного отсчёта до Посыла (результат отображается на сайте в секции "Обратный отсчёт")
 		};
 		this.catalogs = {
 			dict: '618028f53fbe9a7a22fa9e82',
@@ -275,18 +275,16 @@ window.onclick = async function (event) {
 				}
 				try {
 					const state = await app.router.navigateToPath(path, false, targetEl);
-					//window.mainContEl.scrollIntoView(); //window.scroll(0, 0);
-					//this.setHistory(state);
 				} catch (e) {
 					console.error(e);
 				}
             }
 		}
 	}
-	else if (targetEl.type === "button") {
+	/*else if (targetEl.type === "button") {
 		const olnvUpdate = targetEl.dataset.olnvUpdate;
 		if (olnvUpdate === 'check') app.myDB.fillDb();
-    }
+    }*/
 }
 
 window.addEventListener('popstate', async function (event) {
@@ -321,14 +319,43 @@ window.onsubmit = async function (event) {
 	//app.setHistory(state);
 };
 
+const updateBtnEl = document.getElementById('btn-update');
+updateBtnEl.onclick = async function (event) {
+	const res = await app.myDB.fillDb();
+	
+	if (res && Object.keys(res).length > 0 && (res.numberNewData > 0 || res.numberChangeData > 0)) {
+		// Получаем дату из path
+		const datePath = getDateFromPath(location.pathname);
+		let monthCld;
+		let yearCld;
+		if (datePath) {
+			monthCld = datePath.getMonth();
+			yearCld = datePath.getFullYear();
+		}
+
+		await app.cld.getDataCalendar(yearCld, monthCld);
+	}
+}
+
+/** Сигнализирует, что пользователь активен/находится на странице */
+window.addEventListener('scroll', function () {
+	typeof moveCounter !== 'undefined' ? moveCounter++ : 0;
+});
+const pageEl = document.getElementById('page');
+pageEl.addEventListener('mousemove', function () {
+	typeof moveCounter !== 'undefined' ? moveCounter++ : 0;
+});
+document.body.addEventListener('mouseleave', function (el) {
+	moveCounter = 0;
+});
+
+/** Обработка событий календаря */
 window.onChangeCld = function (adjuster) {
 	app.cld.onChangeCld(adjuster);
 }
-
 window.onChangeMonth = async function (month) {
 	app.cld.onChangeMonth(month);
 }
-
 window.onChangeYear = async function (year) {
 	app.cld.onChangeYear(year);
 }
