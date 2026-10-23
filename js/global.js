@@ -1,4 +1,4 @@
-window.verApp = '1.0.0-alpha16';
+window.verApp = '1.0.0-alpha17';
 window.netOffline = undefined;
 window.moveCounter = 0; // счётчик движения мыши на странице, если =0, то пользователь не активен на странице
 

@@ -62,7 +62,10 @@ class Countdown {
 		// если разница во времени между сохранённой ранее локальной/клиентской датой и текущей локальной датой больше чем 5+5 сек, т.е. страница сайта была долго в спящем режиме (свёрнута или комп. был в спящем режиме)
 		if (diffLocal > 10000) { // разница (diffLocal) всегда будет около 5000
 			if (this.procBigDiff === false && this.checkIntervalAddUser(true)) { // когда окно браузера с сайтом свёрнуто, то js выполняет код раз в минуту, поэтому проверяем ещё и активность пользователя перед отправкой запроса, т.к. восстанавливать время надо только когда приложение активно
-				if (!this.showBlock && this.countStartPosyl < (this.secPassPosylShow + 1 + this.rndCounter)) this.buildBlock(0, 0, 0, 0); // при выводе компа/приложения из спящего режима в момент Посыла - надо обнулить счётчик на экране
+				if (!this.showBlock && this.countStartPosyl < (this.secPassPosylShow + 1 + this.rndCounter)) {
+					console.log('Обнуление счётчика во время Посыла');
+					this.buildBlock(0, 0, 0, 0); // при выводе компа/приложения из спящего режима в момент Посыла - надо обнулить счётчик на экране
+				}
 				this.procBigDiff = true;
 				if (this.isDebugTimeleft) console.log('разница - ' + diffLocal + ' время = ' + new Date());
 
