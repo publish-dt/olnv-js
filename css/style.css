@@ -1687,6 +1687,22 @@ SPAN.c2, SPAN.c3, SPAN.c4, SPAN.c5 {
 	display: inline-block;
 }
 
+.settings li {
+	text-align: left;
+}
+	.settings li input {
+		width: 320px;
+		padding: 0px 0px 0px 3px;
+		height: 23px;
+		background-color: #136 !important;
+		opacity: 0.9;
+		border-width: 1px 2px;
+		border-style: solid;
+		border-color: #789 #9CF #9CF #789;
+		font-size: 18px;
+		color: #E8E8E8;
+	}
+
 .bi-spinner {
 	width: 45px;
 	height: 36px;

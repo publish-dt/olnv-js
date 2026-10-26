@@ -16,6 +16,7 @@ class App {
 			urlUpdate: 'https://otk-data.website.yandexcloud.net', // 'data', // 'https://otk-data.pages.dev', //
 			countdown: ["0:37", "03:00", "11:00", "19:00"], // список времени обратного отсчёта до Посыла (результат отображается на сайте в секции "Обратный отсчёт")
 		};
+		this.settings = {};
 		this.catalogs = {
 			dict: '618028f53fbe9a7a22fa9e82',
 			tolk: '55d6a586b6b9a45a700f9eee',
@@ -141,7 +142,20 @@ class App {
 
 	async init() {
 
-        try {
+		try {
+			const urlUpdate = localStorage.getItem('olnvjs_urlUpdate');
+			if (urlUpdate) {
+				this.urlUpdate = urlUpdate;
+				this.settings.urlUpdate = urlUpdate;
+			}
+			else this.urlUpdate = this.configApp.urlUpdate;
+
+			let isOffStarsBg = localStorage.getItem('olnvjs_isOffStarsBg');
+			if (isOffStarsBg) {
+				isOffStarsBg = JSON.parse(isOffStarsBg);
+				this.settings.isOffStarsBg = isOffStarsBg;
+				OnOffStarsBg(isOffStarsBg);
+            }
 
 			/** Заполняем блок Обновления */
 			const isLastCheckGood = JSON.parse(localStorage.getItem('olnvjs_isLastCheckGood'));
@@ -233,7 +247,7 @@ class App {
 	}
 }
 
-const app = new App();
+window.app = new App();
 Dexie.exists('OtkDB').then(function (exists) {
 	createDB();
 

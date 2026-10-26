@@ -433,7 +433,9 @@ class Router {
         }
 
         cnt = `<div class="razdel poem-blok">${desc}</div>`;
-        if (info.Link === 'index') cnt += `<div class="cont"><a href="settings.html">Настройки</a></div>`; //  onclick="clearAllData()"
+        if (info.Link === 'index') {
+            cnt += `<div class="cont"><a href="settings.html">Настройки</a></div>`; //  onclick="clearAllData()"
+        }
 
         // Галлерея
         if (info.Files && info.Files.length > 0) {

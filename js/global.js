@@ -1,4 +1,4 @@
-window.verApp = '1.0.0-beta1';
+window.verApp = '1.0.0-beta2';
 window.netOffline = undefined;
 window.moveCounter = 0; // счётчик движения мыши на странице, если =0, то пользователь не активен на странице
 window.isActiveApp; // прриложение активно/видимо на экране
@@ -215,6 +215,31 @@ async function download(url) {
             console.log(`Ресурс ${url} недоступен:`, error.message);
         else console.error(`Ошибка при скачивании ${url}:`, error);
     }
+}
+
+function setDomain(el) {
+    if (el.value) {
+        window.app.urlUpdate = el.value;
+    }
+    else window.app.urlUpdate = window.app.configApp.urlUpdate;
+    window.app.settings.urlUpdate = el.value;
+}
+
+function setDomainInput(el) {
+    localStorage.setItem('olnvjs_urlUpdate', el.value);
+}
+
+
+/** вкл/откл. звёздное небо */
+function OnOffStarsBg(isOff) {
+    if (isOff) {
+        document.body.style.cssText = 'background: #000E2B';
+    }
+    else {
+        document.body.style.cssText = 'background: #000 url("../img/stars.gif") repeat fixed 0% 0%';
+    }
+    window.app.settings.isOffStarsBg = isOff;
+    localStorage.setItem('olnvjs_isOffStarsBg', isOff);
 }
 
 

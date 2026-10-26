@@ -21,7 +21,7 @@ class DB {
 		const lastCheck = new Date();
 
 
-		const url = this.app.configApp.urlUpdate;
+		const url = this.app.urlUpdate;
 
 		let isLastCheckGood;
 		let lastUpdated;

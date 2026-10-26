@@ -202,7 +202,17 @@ class Views {
         const title = route.Title;
         let cnt = `<h1 id='pageTitle' class='page-title'>${title}</h1>`;
         cnt += `
-        <ul>
+        <ul class="settings">
+            <li>Фоновое изображение (“звёздное небо”):
+                <div class="btn-group" data-toggle="buttons">
+                    <label class="btn btn-success active"><!---->
+                        <input type="checkbox" onchange="OnOffStarsBg(this.checked)" ${window.app.settings.isOffStarsBg ? 'checked' : ''} autocomplete="off">
+                        ${window.app.settings.isOffStarsBg ? 'Включить' : 'Отключить'}
+                    </label>
+                </div><!---->
+            </li>
+            <li><button onclick="OnOffStarsBg(true)" class="btn-link">Отключить</button>/<button onclick="OnOffStarsBg(false)" class="btn-link">включить</button> фоновое изображение (“звёздное небо”)</li>
+            <li>Url для обновления информации: <input id="set-domain" onblur="setDomain(this)" oninput="setDomainInput(this)" value="${window.app.settings.urlUpdate ? this.app.settings.urlUpdate : ''}" title="Альтернативный URL для получения новой информации (например: https://example.com/data/exp)"></li>
             <li>Удалить все материалы: <button type="button" onclick="clearAllData()" class="btn btn-danger" title="На данном компьютере, удаляет из базы данных всю ранее загруженную информацию (это может понадобиться, если необходимо заново загрузить все материалы)">Удалить</button></li>
             <li>Версия приложения/сайта: ${window.verApp}</li>
         </ul>
