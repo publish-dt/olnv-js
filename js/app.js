@@ -93,6 +93,15 @@ class App {
 				Route: ["poems/year", "poems/{year:int}"],
 				Title: "Катрены из Откровений за ",
 				ParamView: [true, 'year']
+			},
+			{
+				Name: "Настройки",
+				//ToMenu: false,
+				View: "Settings",
+				ByLink: false,
+				Route: ["settings"],
+				Title: "Настройки",
+				//ParamView: []
 			}
 		];
 		this.specDate = {
@@ -322,7 +331,8 @@ window.onsubmit = async function (event) {
 const updateBtnEl = document.getElementById('btn-update');
 updateBtnEl.onclick = async function (event) {
 	const res = await app.myDB.fillDb();
-	
+
+	/** Обновляем данные календаря */
 	if (res && Object.keys(res).length > 0 && (res.numberNewData > 0 || res.numberChangeData > 0)) {
 		// Получаем дату из path
 		const datePath = getDateFromPath(location.pathname);
@@ -333,7 +343,7 @@ updateBtnEl.onclick = async function (event) {
 			yearCld = datePath.getFullYear();
 		}
 
-		await app.cld.getDataCalendar(yearCld, monthCld);
+		await app.cld.getDataCalendar(yearCld, monthCld, true);
 	}
 }
 
@@ -348,6 +358,17 @@ pageEl.addEventListener('mousemove', function () {
 document.body.addEventListener('mouseleave', function (el) {
 	moveCounter = 0;
 });
+document.addEventListener('visibilitychange', () => {
+	if (typeof isActiveApp === 'undefined') window.isActiveApp = undefined;
+	if (document.visibilityState === 'visible') {
+		console.log('Вкладка активна');
+		isActiveApp = true;
+	} else {
+		console.log('Вкладка скрыта');
+		isActiveApp = false;
+	}
+});
+
 
 /** Обработка событий календаря */
 window.onChangeCld = function (adjuster) {

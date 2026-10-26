@@ -25,6 +25,7 @@ class Views {
             const grouped = {};
             for (var x in infos) {
                 const info = infos[x];
+                info.Description = undefined; // чтобы не переполнять память
                 const date = strToDate(info.Date);
                 const year = date.getFullYear();
                 const groupName = '_'+(isTolk ? (info.Link === '2004/31.12.04' ? 2005 : year) : date.getMonth());
@@ -195,5 +196,17 @@ class Views {
         cnt += '</div>';
 
         return cnt;
+    }
+
+    renderSettings(route, infos, path, params) {
+        const title = route.Title;
+        let cnt = `<h1 id='pageTitle' class='page-title'>${title}</h1>`;
+        cnt += `
+        <ul>
+            <li>Удалить все материалы: <button type="button" onclick="clearAllData()" class="btn btn-danger" title="На данном компьютере, удаляет из базы данных всю ранее загруженную информацию (это может понадобиться, если необходимо заново загрузить все материалы)">Удалить</button></li>
+            <li>Версия приложения/сайта: ${window.verApp}</li>
+        </ul>
+        `;
+        return { title: title, cnt: cnt };
     }
 }

@@ -14,7 +14,7 @@ class Cld {
         caleandar(CldEl, [], {}, newDate);
     }
 
-    async getDataCalendar(year, month) {
+    async getDataCalendar(year, month, isUpdate) {
         if (this.app.stateContainer.lastPoem && this.app.stateContainer.lastTolk) {
             const lastPoemDate = strToDate(this.app.stateContainer.lastPoem.Date);
             const lastTolkDate = strToDate(this.app.stateContainer.lastTolk.Date);
@@ -32,7 +32,7 @@ class Cld {
                 month = this.maxCldMonth ? this.maxCldMonth : curDate.getMonth();
                 year = this.maxCldYear ? this.maxCldYear : curDate.getFullYear();
             }
-            if (year < this.app.configApp.minYear || (year === this.curCldYear && month === this.curCldMonth-1)) return;
+            if (year < this.app.configApp.minYear || (!isUpdate && year === this.curCldYear && month === this.curCldMonth-1)) return;
             const daysData = [];
             const spinnerEl = document.getElementById('spinner-cld');
             const cldTitleEl = document.getElementById('cld-title');
@@ -42,79 +42,79 @@ class Cld {
             this.curCldMonth = month+1;
             this.curCldYear = year;
 
-            const dateEnd = toMoscowDate(new Date(year, month, 1));
-            const dateStart = toMoscowDate(new Date(dateEnd));
-            dateEnd.setMonth(dateEnd.getMonth() + 1);
+            try {
 
-            const infos = await db['infos']
-                .where('Catalog')
-                .anyOf([this.app.catalogs.dict, this.app.catalogs.tolk, this.app.catalogs.poems])
-                .and((info) => strToDate(info.Date) >= dateStart && strToDate(info.Date) < dateEnd)
-                .sortBy('Date'); // надо обязательно сортировать по дате, чтобы Послания были в приоритете
-                /*.each(async (info) => {
-                    const data = {
-                        Date: formatDateCld(strToDate(info.Date)),
-                        Type: info.Data && info.Data.PoemOutDict ? 'poemOutDict' : (info.Catalog === this.app.catalogs.dict || info.Catalog === this.app.catalogs.tolk ? 'dict' : 'poem'),
-                        Link: info.Link + '.html',
-                        Title: null
-                    };
-                    daysData.push(data);
-                    //console.log(data);
-                }).then(() => {
-                    cldTitleEl.innerHTML = `${months[month]} ${year} года`;
-                    //console.log("daysData:" + daysData.length);
-                    const newDate = new Date(year, month);
-                    CldEl.innerHTML = '';
-                    caleandar(CldEl, daysData, {}, newDate);
-                    spinnerEl.style.display = 'none';
-                }).catch(err => {
-                    console.error(err);
-                });*/
+                const dateEnd = toMoscowDate(new Date(year, month, 1));
+                const dateStart = toMoscowDate(new Date(dateEnd));
+                dateEnd.setMonth(dateEnd.getMonth() + 1);
 
-            /** Группируем по дате, т.к. может быть несколько разных типов материалов в одной дате (Послания, Катрены, спец. даты) */
-            const grouped = [];
-            for (var i in infos) {
-                const info = infos[i];
+                const infos = await db['infos']
+                    .where('Catalog')
+                    .anyOf([this.app.catalogs.dict, this.app.catalogs.tolk, this.app.catalogs.poems])
+                    .and((info) => strToDate(info.Date) >= dateStart && strToDate(info.Date) < dateEnd)
+                    .sortBy('Date'); // надо обязательно сортировать по дате, чтобы Послания были в приоритете
+                    /*.equals(this.app.catalogs.poems)
+                    .orderBy('Date') // orderBy после фильтрации не может идти. filter может только после orderBy идти
+                    .each(async (info) => {
+                        infos.push(data);
+                    }).then(() => {
+                        cldTitleEl.innerHTML = `${months[month]} ${year} года`;
+                        //console.log("daysData:" + daysData.length);
+                        const newDate = new Date(year, month);
+                        CldEl.innerHTML = '';
+                        caleandar(CldEl, daysData, {}, newDate);
+                        spinnerEl.style.display = 'none';
+                    }).catch(err => {
+                        console.error(err);
+                    });*/
 
-                const groupName = formatDateCld(strToDate(info.Date));
+                /** Группируем по дате, т.к. может быть несколько разных типов материалов в одной дате (Послания, Катрены, спец. даты) */
+                const grouped = [];
+                for (var i in infos) {
+                    const info = infos[i];
+                    info.Description = undefined; // чтобы не переполнять память
 
-                if (!grouped[groupName]) {
-                    grouped[groupName] = [];
+                    const groupName = formatDateCld(strToDate(info.Date));
+
+                    if (!grouped[groupName]) {
+                        grouped[groupName] = [];
+                    }
+                    grouped[groupName].push(info);
                 }
-                grouped[groupName].push(info);
-            }
 
-            for (var key in grouped) {
-                const group = grouped[key];
+                for (var key in grouped) {
+                    const group = grouped[key];
 
-                if (group && group.length > 0) {
-                    const infoMess = group.find(info => info.Catalog === this.app.catalogs.dict || info.Catalog === this.app.catalogs.tolk);
-                    const infoPoem = group.find(info => info.Catalog === this.app.catalogs.poems);
-                    const title = this.app.specDate[key];
-                    const data = {
-                        Date: key,
-                        Type: (group.some(info => info.Data && info.Data.PoemOutDict) ? 'poemOutDict' : (infoMess ? 'dict' : 'poem')) + (title ? ' title' : ''),
-                        Link: (infoMess ? infoMess.Link : (infoPoem ? infoPoem.Link : 'notLinkCld')) + '.html',
-                        Title: title ? title : null
-                    };
-                    daysData.push(data);
+                    if (group && group.length > 0) {
+                        const infoMess = group.find(info => info.Catalog === this.app.catalogs.dict || info.Catalog === this.app.catalogs.tolk);
+                        const infoPoem = group.find(info => info.Catalog === this.app.catalogs.poems);
+                        const title = this.app.specDate[key];
+                        const data = {
+                            Date: key,
+                            Type: (group.some(info => info.Data && info.Data.PoemOutDict) ? 'poemOutDict' : (infoMess ? 'dict' : 'poem')) + (title ? ' title' : ''),
+                            Link: (infoMess ? infoMess.Link : (infoPoem ? infoPoem.Link : 'notLinkCld')) + '.html',
+                            Title: title ? title : null
+                        };
+                        daysData.push(data);
+                    }
                 }
-            }
 
-            for (var key in this.app.specDate) {
-                const group = grouped[key];
-                if (!group || (group && group.length === 0)) {
-                    daysData.push({ Date: key, Type: 'title', Link: null, Title: this.app.specDate[key] });
+                for (var key in this.app.specDate) {
+                    const group = grouped[key];
+                    if (!group || (group && group.length === 0)) {
+                        daysData.push({ Date: key, Type: 'title', Link: null, Title: this.app.specDate[key] });
+                    }
                 }
-            }
 
-            cldTitleEl.innerHTML = `${months[month]} ${year} года`;
-            //console.log("daysData:" + daysData.length);
-            const newDate = new Date(year, month);
-            CldEl.innerHTML = '';
-            caleandar(CldEl, daysData, {}, newDate);
+                cldTitleEl.innerHTML = `${months[month]} ${year} года`;
+                //console.log("daysData:" + daysData.length);
+                const newDate = new Date(year, month);
+                CldEl.innerHTML = '';
+                caleandar(CldEl, daysData, {}, newDate);
+            } catch (e) {
+                console.error(e);
+            }
             spinnerEl.style.display = 'none';
-
         }
     }
 

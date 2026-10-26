@@ -184,34 +184,37 @@ class Router {
                     if (isNext || posNext === -1) {
 
                         let routeBy = route.ByLink ? 'Link' : 'Catalog';
-                        let routeVal = route.ByLink ? path : route.Catalogs[0];
+                        let routeVal = route.ByLink ? path : (route.Catalogs ? route.Catalogs[0] : undefined);
 
-                        let coll = db['infos']
-                            .where(routeBy)
-                            .equalsIgnoreCase(routeVal);
+                        let infos;
+                        if (routeVal) {
+                            let coll = db['infos']
+                                .where(routeBy)
+                                .equalsIgnoreCase(routeVal);
 
-                        const isLastYear = path.endsWith('year');
-                        if (!isLastYear && route.ParamView && route.ParamView[0] || (isLastYear && route.Catalogs.includes(this.app.catalogs.tolk))) coll = coll;
-                        else coll = coll.desc();
-                        if (route.ParamView && route.ParamView.length > 1 && route.ParamView[1] === 'year') {
-                            const isPoems = route.Catalogs.includes(this.app.catalogs.poems) ? true : (route.Catalogs.some(el => [this.app.catalogs.dict, this.app.catalogs.tolk].includes(el)) ? false : undefined);
-                            params.isPoems = isPoems;
-                            params.lastYear = strToDate((isPoems ? infoLastPoems.Date : infoLastDict.Date)).getFullYear();
-                            const yearFilter = isLastYear ? params.lastYear : params.year;
-                            if (isLastYear) {
-                                params.year = yearFilter;
-                                params.prefixPath = path.replace('year', '');
+                            const isLastYear = path.endsWith('year');
+                            if (!isLastYear && route.ParamView && route.ParamView[0] || (isLastYear && route.Catalogs.includes(this.app.catalogs.tolk))) coll = coll;
+                            else coll = coll.desc();
+                            if (route.ParamView && route.ParamView.length > 1 && route.ParamView[1] === 'year') {
+                                const isPoems = route.Catalogs.includes(this.app.catalogs.poems) ? true : (route.Catalogs.some(el => [this.app.catalogs.dict, this.app.catalogs.tolk].includes(el)) ? false : undefined);
+                                params.isPoems = isPoems;
+                                params.lastYear = strToDate((isPoems ? infoLastPoems.Date : infoLastDict.Date)).getFullYear();
+                                const yearFilter = isLastYear ? params.lastYear : params.year;
+                                if (isLastYear) {
+                                    params.year = yearFilter;
+                                    params.prefixPath = path.replace('year', '');
+                                }
+                                coll = coll.and((info) => info.Date.includes(yearFilter));
                             }
-                            coll = coll.and((info) => info.Date.includes(yearFilter));
-                        }
-                        if (path === 'otkroveniya') {
-                            params.year = 2004;
-                            params.isPoems = false;
-                            params.lastYear = strToDate(infoLastDict.Date).getFullYear();
-                        }
-                        params.isLastYear = isLastYear;
+                            if (path === 'otkroveniya') {
+                                params.year = 2004;
+                                params.isPoems = false;
+                                params.lastYear = strToDate(infoLastDict.Date).getFullYear();
+                            }
+                            params.isLastYear = isLastYear;
 
-                        const infos = !route.ByLink ? await coll.sortBy('Date') : await coll.toArray();
+                            infos = !route.ByLink ? await coll.sortBy('Date') : await coll.toArray();
+                        }
 
                         if (location.pathname.endsWith('search')) {
                             if (targetEl.dataset.msuPagesearch && (new Boolean(targetEl.dataset.msuPagesearch))) modelSearch = this.app.stateContainer.modelSearch;
@@ -370,12 +373,57 @@ class Router {
         return state;
     }
 
+    async renderView(path, infos, cnt, prePage, lastDict, lastPoem, route, modelSearch) {
+        let listDouble = [];
+        const info = infos[0];
+        const res = {};
+
+        if (info) {
+            const title = route.Title ? route.Title : infos[0].Titles[0];
+            res.title = title;
+
+            const isNoDate = info.Catalog === this.app.catalogs.infos || info.Catalog === this.app.catalogs.notices || info.Catalog === this.app.catalogs.dict || info.Link === '2004/predislovie';
+            const match = !isNoDate ? info.Link.match(/^.*\/(?<date>\d{2}-\d{2}\.\d{2}\.\d{2})$/) : undefined;
+            const dateStr = isNoDate ? '' : (match && match.groups ? match.groups.date : toShortMoscowDate.format(strToDate(info.Date)));
+            cnt += `<h1 class="page-title">${dateStr ? '<span class="date">'+dateStr+'</span> ' : ''}${title}</h1>`;
+
+            for (var j in infos) {
+                const info = infos[j];
+
+                cnt += await this.renderContent(info, lastDict, lastPoem, modelSearch);
+
+                if (route.ByLink) break;
+                else listDouble.push(path);
+            }
+
+            if (info.Link !== 'index') {
+
+                cnt += this.app.views.renderFooter(info, '', '.html', prePage);
+
+            }
+
+            if (route.ByLink && listDouble.length > 1) {
+                console.error(`Вместо одного найдено ${count} элемента! (${listDouble})`);
+            }
+        }
+
+        res.cnt = cnt;
+
+        return res;
+    }
+
     async renderContent(info, lastDict, lastPoem, modelSearch) {
         let cnt = undefined;
         let desc = info.Description;
 
         if (info.Link === 'index') {
             desc = desc.replace('{{$lastdict}}', lastDict).replace('{{$lastpoem}}', lastPoem);
+            try {
+                let regexp = RegExp('(.*)(<h2>Разное<\/h2>)', 'gis');
+                let match = regexp.exec(desc);
+                desc = match[0];
+            } catch (e) {
+            }
         }
 
         // подсвечиваем найденную фразу
@@ -385,6 +433,7 @@ class Router {
         }
 
         cnt = `<div class="razdel poem-blok">${desc}</div>`;
+        if (info.Link === 'index') cnt += `<div class="cont"><a href="settings.html">Настройки</a></div>`; //  onclick="clearAllData()"
 
         // Галлерея
         if (info.Files && info.Files.length > 0) {
@@ -414,48 +463,6 @@ class Router {
             cnt += `<p class="date-footer">${(toShortMoscowDate.format(strToDate(info.Date)))}</p>`;
 
         return cnt;
-    }
-
-
-    async renderView(path, infos, cnt, prePage, lastDict, lastPoem, route, modelSearch) {
-        let listDouble = [];
-        const info = infos[0];
-        const res = {};
-
-        if (info) {
-            const title = route.Title ? route.Title : infos[0].Titles[0];
-            res.title = title;
-
-            const isNoDate = info.Catalog === this.app.catalogs.infos || info.Catalog === this.app.catalogs.notices || info.Catalog === this.app.catalogs.dict || info.Link === '2004/predislovie';
-            const match = !isNoDate ? info.Link.match(/^.*\/(?<date>\d{2}-\d{2}\.\d{2}\.\d{2})$/) : undefined;
-            const dateStr = isNoDate ? '' : (match && match.groups ? match.groups.date : toShortMoscowDate.format(strToDate(info.Date)));
-            cnt += `<h1 class="page-title">${dateStr ? '<span class="date">'+dateStr+'</span> ' : ''}${title}</h1>`;
-
-            for (var j in infos) {
-                const info = infos[j];
-
-                cnt += await this.renderContent(info, lastDict, lastPoem, modelSearch);
-
-                if (route.ByLink) break;
-                else listDouble.push(path);
-            }
-
-            if (info.Link !== 'index') {
-
-                cnt += this.app.views.renderFooter(info, '', '.html', prePage);
-
-            }
-            else
-                cnt += `</br><a href="#" onclick="clearAllData()">Настройки</a>`;
-
-            if (route.ByLink && listDouble.length > 1) {
-                console.error(`Вместо одного найдено ${count} элемента! (${listDouble})`);
-            }
-        }
-
-        res.cnt = cnt;
-
-        return res;
     }
 }
 

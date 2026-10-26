@@ -1,6 +1,7 @@
-window.verApp = '1.0.0-alpha17';
+window.verApp = '1.0.0-beta1';
 window.netOffline = undefined;
 window.moveCounter = 0; // счётчик движения мыши на странице, если =0, то пользователь не активен на странице
+window.isActiveApp; // прриложение активно/видимо на экране
 
 window.onerror = function (message, url, line, col, error) {
 	alert(message + "\n В " + line + ":" + col + " на " + url);
@@ -184,7 +185,7 @@ function createDB(exists) {
 }
 
 function clearAllData() {
-    if (confirm(`Очистить базу данных? (версия: ${window.verApp})`)) {
+    if (confirm(`Очистить базу данных?`)) { //  (версия: ${window.verApp})
         db.delete({ disableAutoOpen: false });
 
         //localStorage.clear();
