@@ -16,7 +16,6 @@ class Countdown {
 		this.period = 5000; // интервал времени (в сек.) для обновления в отображении обратного отсчёта
 		this.timerOn = false; // признак активности таймера обратного отсчёта
 		this.procBigDiff = false; // начат процесс получения времени с сервера, т.к. сайт находился в спящем режиме
-		this.isDebugTimeleft = true; // вкл./выкл. отладчик обратного отсчёта
 		this.localTime = undefined;
 
 		/** это для отслеживания, что пользоветель ещё активен на сайте */
@@ -26,6 +25,7 @@ class Countdown {
 
 	/** Обратный отсчёт до Посыла */
 	async countdown() {
+		this.isDebugTimeleft = app.settings.isOnDebug; // вкл./выкл. отладчик обратного отсчёта
 		this.countStartPosyl += this.period / 1000;
 
 		let today = 0;
@@ -98,7 +98,7 @@ class Countdown {
 	checkIntervalAddUser(noAddUser) {
 		const diffStart = new Date() - this.startTime;
 
-		if ((noAddUser || (!noAddUser && diffStart >= this.intervalAddUser)) && (moveCounter > 0 || (typeof isActiveApp === 'undefined' && isActiveApp))) {
+		if ((noAddUser || (!noAddUser && diffStart >= this.intervalAddUser)) && (moveCounter > 0 || (typeof isActiveApp !== 'undefined' && isActiveApp))) {
 			if (/*!noAddUser &&*/ this.isDebugTimeleft) console.log('разница к старту активности пользователя - ' + diffStart + ' время = ' + new Date());
 
 			this.startTime = new Date();

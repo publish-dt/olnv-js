@@ -1,12 +1,13 @@
-window.verApp = '1.0.0-beta2';
+window.verApp = '1.0.0-beta3';
 window.netOffline = undefined;
 window.moveCounter = 0; // счётчик движения мыши на странице, если =0, то пользователь не активен на странице
 window.isActiveApp; // прриложение активно/видимо на экране
+window.isOnDebug;
 
 window.onerror = function (message, url, line, col, error) {
-	alert(message + "\n В " + line + ":" + col + " на " + url);
+    if (window.isOnDebug)
+        alert(message + "\n В " + line + ":" + col + " на " + url);
 };
-
 
 /** Проверка доступности Интернета */
 window.addEventListener('online', () => {
@@ -200,7 +201,10 @@ function clearAllData() {
     }
 }
 
-async function download(url) {
+async function download(baseUrl, path, updateCount) {
+    let url = baseUrl;
+    if (path) url = url + path;
+
     try {
         if (url !== undefined) {
             const response = await fetch(url);
@@ -208,14 +212,69 @@ async function download(url) {
 
             const data = await response.json();
 
+            if (updateCount < 1) {
+                const serverLostEl = document.getElementById('server-lost');
+                serverLostEl.style.display = 'none';
+            }
             return data;
         }
     } catch (error) {
-        if (error.message === 'Failed to fetch')
+        if (error.message === 'Failed to fetch') {
             console.log(`Ресурс ${url} недоступен:`, error.message);
+            if (updateCount < 1) {
+                const urlFromDNS = await getAddressFromDNS();
+                if (urlFromDNS) {
+                    window.app.urlUpdate = urlFromDNS;
+                    return await download(urlFromDNS, path, ++updateCount);
+                }
+                else {
+                    const serverLostEl = document.getElementById('server-lost');
+                    serverLostEl.style.display = 'block';
+                }
+            }
+        }
         else console.error(`Ошибка при скачивании ${url}:`, error);
     }
 }
+
+// получаем хост/url из DNS-записи
+async function getAddressFromDNS() {
+// список публичных dns-resolvers можно получить здесь: https://en.wikipedia.org/wiki/DNS_over_HTTPS или https://dnsprivacy.org/public_resolvers/#dns-over-https-doh
+
+    if (this.app.configApp.domainDNS) {
+        /*let xhr = new XMLHttpRequest();
+        xhr.open("GET", "https://dns.google/resolve?name=" + this.app.configApp.domainDNS + "&type=TXT");
+        xhr.send();
+
+        xhr.onload = function () {
+            if (xhr.status === 200) {
+                const res = JSON.parse(xhr.response);
+                if (res.Answer && res.Answer.length > 0) {
+                    const data = res.Answer[0].data;
+                    dataArr = data.replace(/"/gi, '').split('=');
+                    if (dataArr && dataArr.length > 1) return dataArr[1];
+                }
+            }
+            else {
+                if (isOnDebug) console.log("Ошибка при получении url: " + xhr.status);
+            }
+        };
+
+        xhr.onerror = function () { // происходит, только когда запрос совсем не получилось выполнить
+            if (isOnDebug) console.log("Ошибка соединения");
+        };*/
+
+        const res = await download("https://dns.google/resolve?name=" + this.app.configApp.domainDNS + "&type=TXT");
+        if (res.Answer && res.Answer.length > 0) {
+            const data = res.Answer[0].data;
+            if (data) {
+                const dataArr = data.replace(/'/gi, '').split('=');
+                if (dataArr && dataArr.length > 1 && dataArr[0] === 'dnslink' && dataArr[1]) return dataArr[1];
+            }
+        }
+    }
+}
+
 
 function setDomain(el) {
     if (el.value) {
@@ -224,11 +283,9 @@ function setDomain(el) {
     else window.app.urlUpdate = window.app.configApp.urlUpdate;
     window.app.settings.urlUpdate = el.value;
 }
-
 function setDomainInput(el) {
     localStorage.setItem('olnvjs_urlUpdate', el.value);
 }
-
 
 /** вкл/откл. звёздное небо */
 function OnOffStarsBg(isOff) {
@@ -240,6 +297,13 @@ function OnOffStarsBg(isOff) {
     }
     window.app.settings.isOffStarsBg = isOff;
     localStorage.setItem('olnvjs_isOffStarsBg', isOff);
+}
+
+/** вкл/откл. режим отладки */
+function OnOffDebug(isOn) {
+    window.isOnDebug = isOn;
+    window.app.settings.isOnDebug = isOn;
+    localStorage.setItem('olnvjs_isOnDebug', isOn);
 }
 
 

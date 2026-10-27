@@ -26,7 +26,7 @@ class DB {
 		let isLastCheckGood;
 		let lastUpdated;
 		let isUpdated = false;
-		const serviceDwld = await this.download(url + '/service.json');
+		const serviceDwld = await download(url, '/service.json', 0);
 		if (serviceDwld) {
 			const isExist = await Dexie.exists('OtkDB');
 			if (!isExist) createDB();
@@ -320,7 +320,7 @@ class DB {
 		}
 	}
 
-	async downloadAndUnzip(url, isFile) {
+	async downloadAndUnzip(url, isFile, updateCount) {
 		try {
 			if (url !== undefined) {
 
@@ -357,11 +357,16 @@ class DB {
 				return files;
 			}
 		} catch (error) {
-			console.error(`Ошибка при скачивании ${url}:`, error);
+			if (error.message === 'Failed to fetch')
+				console.log(`Ресурс ${url} недоступен:`, error.message);
+			else console.error(`Ошибка при скачивании ${url}:`, error);
 		}
 	}
 			
-	async download(url) {
+	/*async download(baseUrl, path, updateCount) {
+		let url = baseUrl;
+		if (path) url = url + path;
+
 		try {
 			if (url !== undefined) {
 				const response = await fetch(url);
@@ -372,9 +377,17 @@ class DB {
 				return data;
 			}
 		} catch (error) {
-			if (error.message === 'Failed to fetch')
+			if (error.message === 'Failed to fetch') {
 				console.log(`Ресурс ${url} недоступен:`, error.message);
+				if (updateCount < 2) {
+					const urlFromDNS = await getAddressFromDNS();
+					if (urlFromDNS) {
+						this.app.urlUpdate = urlFromDNS;
+						return await download(urlFromDNS + path, path, updateCount++);
+					}
+                }
+			}
 			else console.error(`Ошибка при скачивании ${url}:`, error);
 		}
-	}
+	}*/
 }

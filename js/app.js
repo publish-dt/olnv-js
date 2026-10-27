@@ -12,8 +12,9 @@ class App {
 
 		this.configApp = {
 			minYear: 2004,
-			// 'https://cors-anywhere.herokuapp.com/https://otk-data.web.app'    http://otk-data.website.yandexcloud.net
-			urlUpdate: 'https://otk-data.website.yandexcloud.net', // 'data', // 'https://otk-data.pages.dev', //
+			// 'https://cors-anywhere.herokuapp.com/https://otk-data.web.app'  https://publish-dt.github.io/otk-data/exp
+			urlUpdate: 'https://otk-data.website.yandexcloud.net', // 'data', // 'https://otk-data.pages.dev', // 
+			domainDNS: '_dnslink.dvizhenietvorca.ru',
 			countdown: ["0:37", "03:00", "11:00", "19:00"], // список времени обратного отсчёта до Посыла (результат отображается на сайте в секции "Обратный отсчёт")
 		};
 		this.settings = {};
@@ -148,13 +149,25 @@ class App {
 				this.urlUpdate = urlUpdate;
 				this.settings.urlUpdate = urlUpdate;
 			}
-			else this.urlUpdate = this.configApp.urlUpdate;
+			else {
+				const urlFromDNS = await getAddressFromDNS();
+				if (urlFromDNS) this.urlUpdate = urlFromDNS;
+				else this.urlUpdate = this.configApp.urlUpdate;
+			}
 
 			let isOffStarsBg = localStorage.getItem('olnvjs_isOffStarsBg');
 			if (isOffStarsBg) {
 				isOffStarsBg = JSON.parse(isOffStarsBg);
 				this.settings.isOffStarsBg = isOffStarsBg;
 				OnOffStarsBg(isOffStarsBg);
+            }
+
+			let isOnDebug = localStorage.getItem('olnvjs_isOnDebug');
+			if (isOnDebug) {
+				isOnDebug = JSON.parse(isOnDebug);
+				window.isOnDebug = isOnDebug;
+				this.settings.isOnDebug = isOnDebug;
+				OnOffDebug(isOnDebug);
             }
 
 			/** Заполняем блок Обновления */
