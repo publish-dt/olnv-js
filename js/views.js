@@ -97,7 +97,7 @@ class Views {
 
             const prePage = curPosition - 1;
             const nextPage = curPosition + 1;
-            cnt += this.renderFooter(undefined, params.prefixPath, '.html', prePage >= firstNumber ? (prePage === firstNumber && !params.isPoems ? 'otkroveniya' : prePage) : '', nextPage <= lastNumber ? (nextPage === lastNumber ? 'year' : nextPage) : '');
+            cnt += this.renderFooter(undefined, undefined, params.prefixPath, '.html', prePage >= firstNumber ? (prePage === firstNumber && !params.isPoems ? 'otkroveniya' : prePage) : '', nextPage <= lastNumber ? (nextPage === lastNumber ? 'year' : nextPage) : '');
 
             res.tite = title;
         }
@@ -167,7 +167,7 @@ class Views {
         return { cnt: cnt, prePage: prePage, nextPage: nextPage };
 	}
 
-    renderFooter(info, prefixPath, suffixPath, prePage, nextPage) {
+    renderFooter(path, info, prefixPath, suffixPath, prePage, nextPage, isPrint) {
 
         let cnt = '<div class="page-footer">';
 
@@ -194,6 +194,15 @@ class Views {
         }
 
         cnt += '</div>';
+
+        if (info && isPrint)
+        {
+            cnt += `
+            <div class="col-xs-6 version-print">
+                <a href="${'print/' + path + '.html'}" target="_blank" class="blue-link-version-print">Версия для печати</a>
+            </div>
+            `;
+        }
 
         return cnt;
     }

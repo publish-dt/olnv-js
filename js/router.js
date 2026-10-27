@@ -29,19 +29,10 @@ class Router {
                 if (arrPath.length > 1) hash = arrPath[1];
                 path = arrPath[0];
 
-                // Получаем дату из path
-                const datePath = getDateFromPath(path);
-                let monthCld;
-                let yearCld;
-                if (datePath) {
-                    monthCld = datePath.getMonth();
-                    yearCld = datePath.getFullYear();
-                }
-                this.app.cld.getDataCalendar(yearCld, monthCld);
-
                 // получаем настройки роутинга
                 let params = {};
-                let route = { ByLink: true };
+                let route;// = { ByLink: true };
+                let routeAllPage;
                 for (var k in this.app.routes) {
                     if (this.app.routes[k].Route.includes(path)) {
                         route = this.app.routes[k];
@@ -75,6 +66,12 @@ class Router {
                         route = this.app.routes[k];
                         break;
                     }
+                    if (this.app.routes[k].Route.length === 0) routeAllPage = this.app.routes[k];
+                }
+                if (!route) route = routeAllPage;
+
+                if (path.startsWith('print/')) {
+                    path = path.substring('print/'.length);
                 }
 
                 if (path.startsWith('cnt/')) {
@@ -353,8 +350,19 @@ class Router {
             }
         }
 
-        if ((settings !== undefined || !this.app.stateContainer.updateInfo.updateStarted) && !newTab)
+        if ((settings !== undefined || !this.app.stateContainer.updateInfo.updateStarted) && !newTab) {
             mainContEl.innerHTML = cnt;
+
+            // Для календаря получаем дату из path
+            const datePath = getDateFromPath(path);
+            let monthCld;
+            let yearCld;
+            if (datePath) {
+                monthCld = datePath.getMonth();
+                yearCld = datePath.getFullYear();
+            }
+            this.app.cld.getDataCalendar(yearCld, monthCld);
+        }
 
         state.path = path;
         state.hash = hash;
@@ -397,8 +405,8 @@ class Router {
             }
 
             if (info.Link !== 'index') {
-
-                cnt += this.app.views.renderFooter(info, '', '.html', prePage);
+                const isPrint = route.ParamView && route.ParamView.length > 2 ? route.ParamView[2] : false;
+                cnt += this.app.views.renderFooter(path, info, '', '.html', prePage, undefined, isPrint);
 
             }
 

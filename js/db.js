@@ -39,8 +39,9 @@ class DB {
 			isLastCheckGood = true;
 
 			if (Object.keys(res).length > 0) {
-				if (!isAwait && (res.numberNewData > 0 || res.numberChangeData > 0))
+				if (!isAwait && (res.numberNewData > 0 || res.numberChangeData > 0)) {
 					alert(`Загружено: ${res.numberNewData} новых материалов и ${res.numberChangeData} изменённых материалов`);
+				}
 
 				lastUpdated = lastCheck;
 				this.app.stateContainer.updateInfo.lastUpdated = lastUpdated;
@@ -320,13 +321,13 @@ class DB {
 		}
 	}
 
-	async downloadAndUnzip(url, isFile, updateCount) {
+	async downloadAndUnzip(url, isFile) {
 		try {
 			if (url !== undefined) {
 
 				console.log(`Скачивание архива ${url} ...`);
 
-				const response = await fetch(url);
+				const response = await fetch(url, { cache: 'no-store' });
 				if (!response.ok) throw new Error('Ошибка загрузки архива');
 
 				console.log('Архив скачан');
@@ -362,32 +363,4 @@ class DB {
 			else console.error(`Ошибка при скачивании ${url}:`, error);
 		}
 	}
-			
-	/*async download(baseUrl, path, updateCount) {
-		let url = baseUrl;
-		if (path) url = url + path;
-
-		try {
-			if (url !== undefined) {
-				const response = await fetch(url);
-				if (!response.ok) throw new Error(`Ошибка загрузки ${url}`);
-
-				const data = await response.json();
-
-				return data;
-			}
-		} catch (error) {
-			if (error.message === 'Failed to fetch') {
-				console.log(`Ресурс ${url} недоступен:`, error.message);
-				if (updateCount < 2) {
-					const urlFromDNS = await getAddressFromDNS();
-					if (urlFromDNS) {
-						this.app.urlUpdate = urlFromDNS;
-						return await download(urlFromDNS + path, path, updateCount++);
-					}
-                }
-			}
-			else console.error(`Ошибка при скачивании ${url}:`, error);
-		}
-	}*/
 }

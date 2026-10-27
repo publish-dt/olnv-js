@@ -13,9 +13,9 @@ class App {
 		this.configApp = {
 			minYear: 2004,
 			// 'https://cors-anywhere.herokuapp.com/https://otk-data.web.app'  https://publish-dt.github.io/otk-data/exp
-			urlUpdate: 'https://otk-data.website.yandexcloud.net', // 'data', // 'https://otk-data.pages.dev', // 
+			urlUpdate: 'https://otk-data.website.yandexcloud.net', // 'https://otk-data.pages.dev', // 'data', // 
 			domainDNS: '_dnslink.dvizhenietvorca.ru',
-			countdown: ["0:37", "03:00", "11:00", "19:00"], // список времени обратного отсчёта до Посыла (результат отображается на сайте в секции "Обратный отсчёт")
+			countdown: [/*"0:37",*/ "03:00", "11:00", "19:00"], // список времени обратного отсчёта до Посыла (результат отображается на сайте в секции "Обратный отсчёт")
 		};
 		this.settings = {};
 		this.catalogs = {
@@ -38,6 +38,12 @@ class App {
 			this.catalogs.poems
 		];
 		this.routes = [
+			{
+				Name: "Прочие страницы",
+				ByLink: true,
+				Route: [],
+				ParamView: [true, null, true]
+			},
 			{
 				Name: "Объявления",
 				//ToMenu: true,
@@ -266,12 +272,6 @@ Dexie.exists('OtkDB').then(function (exists) {
 
 	app.init();
 });/**/
-/*window.db = new Dexie('OtkDB');
-db.version(1).stores({
-	infos: 'Id, Link, Data.Next, Catalog, Date',
-	quote: '++Number',
-	settings: 'name' 
-});*/
 
 window.dbApp = new Dexie('OtkApp');
 dbApp.version(1).stores({
@@ -357,10 +357,10 @@ window.onsubmit = async function (event) {
 
 const updateBtnEl = document.getElementById('btn-update');
 updateBtnEl.onclick = async function (event) {
-	const res = await app.myDB.fillDb();
+	/*const res = await*/ app.myDB.fillDb();
 
 	/** Обновляем данные календаря */
-	if (res && Object.keys(res).length > 0 && (res.numberNewData > 0 || res.numberChangeData > 0)) {
+	/*if (res && Object.keys(res).length > 0 && (res.numberNewData > 0 || res.numberChangeData > 0)) {
 		// Получаем дату из path
 		const datePath = getDateFromPath(location.pathname);
 		let monthCld;
@@ -371,7 +371,7 @@ updateBtnEl.onclick = async function (event) {
 		}
 
 		await app.cld.getDataCalendar(yearCld, monthCld, true);
-	}
+	}*/
 }
 
 /** Сигнализирует, что пользователь активен/находится на странице */

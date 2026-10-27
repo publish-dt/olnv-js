@@ -1,4 +1,4 @@
-window.verApp = '1.0.0-beta3';
+window.verApp = '1.0.0-beta4';
 window.netOffline = undefined;
 window.moveCounter = 0; // счётчик движения мыши на странице, если =0, то пользователь не активен на странице
 window.isActiveApp; // прриложение активно/видимо на экране
@@ -207,7 +207,7 @@ async function download(baseUrl, path, updateCount) {
 
     try {
         if (url !== undefined) {
-            const response = await fetch(url);
+            const response = await fetch(url, { cache: 'no-store' });
             if (!response.ok) throw new Error(`Ошибка загрузки ${url}`);
 
             const data = await response.json();

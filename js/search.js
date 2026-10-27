@@ -274,7 +274,7 @@ class Search {
                         </div><!--/search-pagin-blok-->`;
             }
 
-            cnt += this.app.views.renderFooter(undefined, '', '', res ? res.prePage : '', res ? res.nextPage : '');
+            cnt += this.app.views.renderFooter(undefined, undefined, '', '', res ? res.prePage : '', res ? res.nextPage : '');
         }
 
         res.title = title;
