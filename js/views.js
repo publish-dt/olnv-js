@@ -19,7 +19,11 @@ class Views {
             const isNoDate = info.Catalog === this.app.catalogs.infos || info.Catalog === this.app.catalogs.notices || info.Catalog === this.app.catalogs.dict || info.Link === '2004/predislovie';
             const match = !isNoDate ? info.Link.match(/^.*\/(?<date>\d{2}-\d{2}\.\d{2}\.\d{2})$/) : undefined;
             const dateStr = isNoDate ? '' : (match && match.groups ? match.groups.date : toShortMoscowDate.format(strToDate(info.Date)));
-            cnt += `<h1 class="page-title">${dateStr ? '<span class="date">' + dateStr + '</span> ' : ''}${title}</h1>`;
+            cnt += `
+            ${isTab ? '<div style="display: flex;"><span class="tab-back-btn tab-back-btn-top">< назад</span>' : ''}
+            <h1 class="page-title">${dateStr ? '<span class="date">' + dateStr + '</span> ' : ''}${title}</h1>
+            ${isTab ? '</div>' : ''}
+            `;
 
             for (var j in infos) {
                 const info = infos[j];
@@ -30,9 +34,9 @@ class Views {
                 else listDouble.push(path);
             }
 
-            if (!isTab && info.Link !== 'index') {
+            if (info.Link !== 'index') {
                 const isPrint = route.ParamView && route.ParamView.isPrint;
-                cnt += this.app.views.renderFooter(path, info, '', '.html', prePage, undefined, isPrint);
+                cnt += this.app.views.renderFooter(path, info, '', '.html', prePage, undefined, isPrint, isTab);
 
             }
 
@@ -262,29 +266,32 @@ class Views {
         return { cnt: cnt, prePage: prePage, nextPage: nextPage };
 	}
 
-    renderFooter(path, info, prefixPath, suffixPath, prePage, nextPage, isPrint) {
+    renderFooter(path, info, prefixPath, suffixPath, prePage, nextPage, isPrint, isTab) {
 
-        let cnt = '<div class="page-footer">';
+        let cnt = `<div class="page-footer" style="${isTab ? 'padding-top: unset;' : ''}">`;
 
-        if (prePage && ((info && this.app.catalogsIsNext.includes(info.Catalog)) || !info)) {
-            cnt += `<a href="${prefixPath}${prePage}${suffixPath}" class="blue-link-pagination">Предыдущая</a>
-                <img src="img/star.gif" height="15" hspace="10" width="15">`
-        }
+        if (!isTab) {
 
-        cnt += `<button onclick="window.mainContEl.scrollIntoView();" class="btn-link blue-link-pagination">В начало страницы</button>`;
-
-        let linkNext = nextPage;
-        if (info && this.app.catalogsIsNext.includes(info.Catalog)) {
-            linkNext = info.Data.Next;
-            if (!info.Data.Next) {
-                linkNext = info.Link + '-next';
+            if (prePage && ((info && this.app.catalogsIsNext.includes(info.Catalog)) || !info)) {
+                cnt += `<a href="${prefixPath}${prePage}${suffixPath}" class="blue-link-pagination">Предыдущая</a>
+                    <img src="img/star.gif" height="15" hspace="10" width="15">`
             }
-        }
-        if (linkNext) {
-            cnt += `<img src="img/star.gif" height="15" hspace="10" width="15">
-                <a href="${prefixPath}${linkNext}${suffixPath}" class="blue-link-pagination">Следующая</a>`;
-            if (info && !info.Data.Next) {
-                cnt += '<span id="label-next" title="Следующей страницы ещё может не быть"> [*]</span><span id="spinner-next" class="bi-spinner"></span>';
+
+            cnt += `<button onclick="window.mainContEl.scrollIntoView();" class="btn-link blue-link-pagination">В начало страницы</button>`;
+
+            let linkNext = nextPage;
+            if (info && this.app.catalogsIsNext.includes(info.Catalog)) {
+                linkNext = info.Data.Next;
+                if (!info.Data.Next) {
+                    linkNext = info.Link + '-next';
+                }
+            }
+            if (linkNext) {
+                cnt += `<img src="img/star.gif" height="15" hspace="10" width="15">
+                    <a href="${prefixPath}${linkNext}${suffixPath}" class="blue-link-pagination">Следующая</a>`;
+                if (info && !info.Data.Next) {
+                    cnt += '<span id="label-next" title="Следующей страницы ещё может не быть"> [*]</span><span id="spinner-next" class="bi-spinner"></span>';
+                }
             }
         }
 
@@ -292,11 +299,13 @@ class Views {
 
         if (info && isPrint)
         {
-            cnt += `
-            <div class="col-xs-6 version-print">
-                <a href="${'print/' + path + '.html'}" target="_blank" class="blue-link-version-print">Версия для печати</a>
-            </div>
-            `;
+            if (isTab) cnt += '<span class="tab-back-btn">< назад</span>';
+            else
+                cnt += `
+                <div class="col-xs-6 version-print">
+                    <a href="${'print/' + path + '.html'}" target="_blank" class="blue-link-version-print">Версия для печати</a>
+                </div>
+                `;
         }
 
         return cnt;
@@ -317,25 +326,19 @@ class Views {
         return { title: title, cnt: cnt };
     }
 
-    renderPrintLayout(cnt, path, hash, documentTitle, app) {
-        const printLayout = `
-    <div class="container-fluid" style="height: 95vh;"><!-- -->
-        <div class="row">
-            <main>
-                <div class="col-lg-11 col-lg-offset-1 col-md-11 col-md-offset-1 col-sm-12 col-xs-12 left-print points-left">
-                    <button onclick="hideOverlayTab()">Назад</button>${cnt}
-                </div>
-            </main>
-        </div>
-    </div>
-    
-    <footer>
-        <div class="row">
-            <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 left-print print2">
-                Страница: <span id="curLinkF"></span><br>Подготовлено к печати <span id="dateF"></span>
-            </div>
-        </div><!--/row-->
-    </footer>
+    renderPrintLayout(cnt, isSearch) {
+/*
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <base href="/olnv-js/" /> <!--  -->
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="css/lib/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="css/style-print.css">
+    <title>${documentTitle}</title>
+</head>
+<body style="min-height:100vh">
 
     <script>
 
@@ -362,24 +365,23 @@ class Views {
         }
 
     </script>
-                    `;
-/*
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="utf-8" />
-    <base href="/olnv-js/" /> <!--  -->
-    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
-    <link rel="stylesheet" href="css/lib/bootstrap.min.css" />
-    <link rel="stylesheet" type="text/css" href="css/style-print.css">
-    <title>${documentTitle}</title>
-</head>
-<body style="min-height:100vh">
 
 
 </body>
 </html>
 */
+        const printLayout = `
+    <div class="container-fluid" style="height: 94vh;">
+        <div class="row">
+            <main>
+                <div class="col-lg-11 col-lg-offset-1 col-md-11 col-md-offset-1 col-sm-12 col-xs-12 left-print points-left">
+                    ${cnt}
+                </div>
+            </main>
+        </div>
+    </div>
+        ${!isSearch ? '<footer><div class="row"><div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 left-print print2">Страница: <span id="curLinkF"></span><br>Подготовлено к печати <span id="dateF"></span></div></div></footer>' : ''}
+                    `;
         return printLayout;
     }
 }

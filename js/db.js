@@ -74,7 +74,7 @@ class DB {
 
 
 		if (!isAwait && isUpdated)
-			this.app.router.navigateToPath(this.app.getPath(location.href));
+			this.app.router.navigateToPath(this.app.getPath(location.href), null, null, true);
 
 		console.log(`В базе: ${db ? await db.infos.count() : 0} материалов`);
 

@@ -1,4 +1,4 @@
-window.verApp = '1.0.0-beta5';
+window.verApp = '1.0.0-beta6';
 window.netOffline = undefined;
 window.moveCounter = 0; // счётчик движения мыши на странице, если =0, то пользователь не активен на странице
 window.isActiveApp; // прриложение активно/видимо на экране
@@ -311,11 +311,3 @@ const footerYearEl = document.getElementById('footer-year');
 footerYearEl.innerHTML = (new Date()).getFullYear();
 
 const months = ["январь", "февраль", "март", "апрель", "май", "июнь", "июль", "август", "сентябрь", "октябрь", "ноябрь", "декабрь"];
-
-function hideOverlayTab() {
-    const overlayTabEl = document.getElementById('overlay-tab');
-    overlayTabEl.style.display = 'none';
-    overlayTabEl.innerHTML = '';
-
-    document.getElementById('page').style.display = 'block';
-}

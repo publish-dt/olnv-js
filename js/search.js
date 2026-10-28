@@ -323,9 +323,9 @@ class Search {
                         const subTitleText = subTitleMatch.groups["title"].replace(/<(\/)?h1>/g, "");
 
                         const highlight = searchData.patternHightlight ? subTitleText.replace(RegExp(searchData.patternHightlight, searchOptions), "<span class='hightlight'>" + searchData.sectionHightlight + "</span>") : subTitleText; // подсвечиваем найденную фразу
-                        subTitle = `<a target="_blank" href='${(!info.Link ? "" : info.Link + ".html#") + numb}'>
+                        subTitle = `<a target="_blank" href='${(!info.Link ? "" : info.Link + ".html#") + numb}' data-msu-pagesearch='true'>
                         <h4${searchData && searchData.viewedList && searchData.viewedList.includes(info.Link + '#' + numb) ? " style='color: peru!important;'" : ""}
-                        data-msu-pagesearch='true'
+                        
                         >` + highlight + "</h4></a>";
 
                         if (searchData.where === 'Titles'

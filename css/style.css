@@ -760,10 +760,11 @@ td{
 /*Заголовок страницы, ответы к Посланию*/
 .page-title,
 .next {
-    margin-bottom: 10px;
+	margin-bottom: 10px;
 	text-align: center;
-	border-bottom: 4px double #F0F0F0;	
-	line-height: 2;	
+	border-bottom: 4px double #F0F0F0;
+	line-height: 2;
+	width: 100%;
 }
 /*Дата Послания*/
 .date{
@@ -1728,11 +1729,25 @@ SPAN.c2, SPAN.c3, SPAN.c4, SPAN.c5 {
 }
 
 #overlay-tab {
-	/*position: fixed;  Фиксирует слой поверх всего документа */
 	top: 0;
 	left: 0;
 	width: 100%;
 	height: 100%;
 	z-index: 2; /* Определяет порядок в стеке — слой будет поверх других элементов */
 	display: none; /* По умолчанию скрыт */
+}
+
+.tab-back-btn {
+	cursor: pointer;
+	font-size: 22px !important;
+	text-align: left;
+	line-height: 2;
+}
+
+.tab-back-btn-top {
+	white-space: nowrap;
+	margin-top: 20px !important;
+	margin-bottom: 10px;
+	padding-right: 15px;
+	border-bottom: 4px double #F0F0F0;
 }

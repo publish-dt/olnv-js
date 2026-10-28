@@ -5,7 +5,7 @@ class Router {
         this.app = app;
     }
 
-    async navigateToPath(path, firstLoad, targetEl) {
+    async navigateToPath(path, firstLoad, targetEl, isUpdate) {
 
         let count = 0;
         let cnt = '';
@@ -17,6 +17,7 @@ class Router {
         let modelSearch;
 
         const isTab = targetEl ? targetEl.target === '_blank' : false;
+        const isSearchTab = targetEl && targetEl.dataset.msuPagesearch && (new Boolean(targetEl.dataset.msuPagesearch));
 
         if (path !== '') {
             let prePage = '';
@@ -215,7 +216,7 @@ class Router {
                         }
 
                         if (location.pathname.endsWith('search')) {
-                            if (targetEl.dataset.msuPagesearch && (new Boolean(targetEl.dataset.msuPagesearch))) modelSearch = this.app.stateContainer.modelSearch;
+                            if (isSearchTab) modelSearch = this.app.stateContainer.modelSearch;
                             else this.app.stateContainer.modelSearch = {};
                         }
 
@@ -260,12 +261,12 @@ class Router {
                 var isTab = window.open('', documentTitle); // , features
                 isTab.document.body.appendChild(divEl);*/
 
-                const printLayout = this.app.views.renderPrintLayout(cnt, path, hash, documentTitle, app);
+                const printLayout = this.app.views.renderPrintLayout(cnt, isSearchTab);
                 const overlayTabEl = document.getElementById('overlay-tab');
                 overlayTabEl.style.display = 'block';
                 overlayTabEl.innerHTML = printLayout;
 
-                onLoadTab(path, hash, app);
+                onLoadTab(path, hash, app, isSearchTab);
 
                 const mainPageEl = document.getElementById('page');
                 mainPageEl.style.display = 'none';
@@ -329,7 +330,7 @@ class Router {
                 monthCld = datePath.getMonth();
                 yearCld = datePath.getFullYear();
             }
-            this.app.cld.getDataCalendar(yearCld, monthCld);
+            this.app.cld.getDataCalendar(yearCld, monthCld, isUpdate);
         }
 
         state.path = path;
@@ -356,9 +357,28 @@ function getRandomInt(max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function onLoadTab(path, hash, app) {
-    document.getElementById('curLinkF').innerHTML = location.href;
-    document.getElementById('dateF').innerHTML = getCurTime();
+let cssLinkPrintLayout;
+function onLoadTab(path, hash, app, isSearch) {
+    if (!isSearch) {
+        cssLinkPrintLayout = document.createElement('link');
+        cssLinkPrintLayout.rel = 'stylesheet';
+        cssLinkPrintLayout.href = 'css/style-print.css';
+        document.head.appendChild(cssLinkPrintLayout);
+    }
+
+    const btnBack = document.querySelectorAll('.tab-back-btn');
+    if (btnBack) {
+        for (var i = 0; i < btnBack.length; i++) {
+            btnBack[i].addEventListener('click', () => {
+                hideOverlayTab();
+            });
+        }
+    }
+
+    const curLinkEl = document.getElementById('curLinkF');
+    if (curLinkEl) curLinkEl.innerHTML = location.href;
+    const dateEl = document.getElementById('dateF');
+    if (dateEl) dateEl.innerHTML = getCurTime();
 
     //tooltipstering(true);
 
@@ -366,8 +386,18 @@ function onLoadTab(path, hash, app) {
         const hashEl = document.getElementsByName(hash);
         if (hashEl.length > 0) hashEl[0].scrollIntoView();
     }
-    path = '/' + `${app.basePath + (path === 'index' ? '' : (path + (!path.startsWith('search ? ') ? '.html' : ''))) + (hash ? '#' + hash : '')}`;
-    history.pushState({}, '', path);
+    /*path = '/' + `${app.basePath + (path === 'index' ? '' : (path + (!path.startsWith('search ? ') ? '.html' : ''))) + (hash ? '#' + hash : '')}`;
+    history.pushState({}, '', path);*/
+}
+
+function hideOverlayTab() {
+    const overlayTabEl = document.getElementById('overlay-tab');
+    overlayTabEl.style.display = 'none';
+    overlayTabEl.innerHTML = '';
+
+    if (cssLinkPrintLayout) cssLinkPrintLayout.remove();
+
+    document.getElementById('page').style.display = 'block';
 }
 
 function getCurTime() {
