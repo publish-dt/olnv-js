@@ -16,7 +16,7 @@ class DB {
 		this.app.stateContainer.updateInfo.updateStarted = true;
 
 		const spinnerUpdatedEl = document.getElementById('spinner-updated');
-		spinnerUpdatedEl.style.display = 'inline-block';
+		if (spinnerUpdatedEl) spinnerUpdatedEl.style.display = 'inline-block';
 
 		const lastCheck = new Date();
 
@@ -65,7 +65,7 @@ class DB {
 
 		this.app.buildBlockUpdate(isLastCheckGood, lastCheck, lastUpdated);
 
-		spinnerUpdatedEl.style.display = 'none';
+		if (spinnerUpdatedEl) spinnerUpdatedEl.style.display = 'none';
 
 		if (lastCheck) localStorage.setItem('olnvjs_lastCheck', JSON.stringify(lastCheck));
 		if (isLastCheckGood !== undefined) localStorage.setItem('olnvjs_isLastCheckGood', JSON.stringify(isLastCheckGood));

@@ -40,13 +40,14 @@ class App {
 		this.routes = [
 			{
 				Name: "Прочие страницы",
+				View: "Info",
 				ByLink: true,
 				Route: [],
-				ParamView: [true, null, true]
+				ParamView: { isPrint: true }
 			},
 			{
 				Name: "Объявления",
-				//ToMenu: true,
+				View: "Info",
 				Catalogs: [
 					this.catalogs.notices
 				],
@@ -56,7 +57,6 @@ class App {
 			},
 			{
 				Name: "Откровения",
-				//ToMenu: true,
 				View: "InfoList",
 				Catalogs: [
 					this.catalogs.dict
@@ -64,11 +64,10 @@ class App {
 				ByLink: false,
 				Route: ["otkroveniya"],
 				Title: "Послания за ",
-				ParamView: [ true ]
+				ParamView: { sortAsc: true }
 			},
 			{
 				Name: "Толкования",
-				//ToMenu: true,
 				View: "InfoList",
 				Catalogs: [
 					this.catalogs.tolk
@@ -76,11 +75,10 @@ class App {
 				ByLink: false,
 				Route: ["tolkovaniya"],
 				Title: "Толкования Откровений",
-				ParamView: [true]
+				ParamView: { sortAsc: true }
 			},
 			{
 				Name: "Новые тексты",
-				//ToMenu: true,
 				View: "InfoList",
 				Catalogs: [
 					this.catalogs.tolk
@@ -88,11 +86,10 @@ class App {
 				ByLink: false,
 				Route: ["year", "{year:int}"],
 				Title: "Послания за ",
-				ParamView: [true, 'year']
+				ParamView: { sortAsc: true, filter: 'year' }
 			},
 			{
 				Name: "Катрены",
-				//ToMenu: true,
 				View: "InfoList",
 				Catalogs: [
 					this.catalogs.poems
@@ -100,16 +97,14 @@ class App {
 				ByLink: false,
 				Route: ["poems/year", "poems/{year:int}"],
 				Title: "Катрены из Откровений за ",
-				ParamView: [true, 'year']
+				ParamView: { sortAsc: true, filter: 'year' }
 			},
 			{
 				Name: "Настройки",
-				//ToMenu: false,
 				View: "Settings",
 				ByLink: false,
 				Route: ["settings"],
-				Title: "Настройки",
-				//ParamView: []
+				Title: "Настройки"
 			}
 		];
 		this.specDate = {
@@ -257,12 +252,14 @@ class App {
 	
 	buildBlockUpdate(isLastCheckGood, lastCheck, lastUpdated) {
 		const lastCheckEl = document.getElementById('last-check');
-		lastCheckEl.innerHTML = lastCheck ? toDateTime.format(lastCheck) : '--';
-		lastCheckEl.style.cssText = (isLastCheckGood === false) ? 'color: peru !important;' : '';
-		lastCheckEl.title = (isLastCheckGood === false) ? 'Неудачная проверка обновлений' : 'Время последней проверки по наличию новой информации';
+		if (lastCheckEl) {
+			lastCheckEl.innerHTML = lastCheck ? toDateTime.format(lastCheck) : '--';
+			lastCheckEl.style.cssText = (isLastCheckGood === false) ? 'color: peru !important;' : '';
+			lastCheckEl.title = (isLastCheckGood === false) ? 'Неудачная проверка обновлений' : 'Время последней проверки по наличию новой информации';
 
-		const lastlastUpdatedEl = document.getElementById('last-updated');
-		lastlastUpdatedEl.innerHTML = lastUpdated ? toDateTime.format(lastUpdated) : '--';
+			const lastlastUpdatedEl = document.getElementById('last-updated');
+			lastlastUpdatedEl.innerHTML = lastUpdated ? toDateTime.format(lastUpdated) : '--';
+        }
 	}
 }
 
@@ -356,22 +353,24 @@ window.onsubmit = async function (event) {
 };
 
 const updateBtnEl = document.getElementById('btn-update');
-updateBtnEl.onclick = async function (event) {
-	/*const res = await*/ app.myDB.fillDb();
+if (updateBtnEl) {
+	updateBtnEl.onclick = async function (event) {
+		/*const res = await*/ app.myDB.fillDb();
 
-	/** Обновляем данные календаря */
-	/*if (res && Object.keys(res).length > 0 && (res.numberNewData > 0 || res.numberChangeData > 0)) {
-		// Получаем дату из path
-		const datePath = getDateFromPath(location.pathname);
-		let monthCld;
-		let yearCld;
-		if (datePath) {
-			monthCld = datePath.getMonth();
-			yearCld = datePath.getFullYear();
-		}
+		/** Обновляем данные календаря */
+		/*if (res && Object.keys(res).length > 0 && (res.numberNewData > 0 || res.numberChangeData > 0)) {
+			// Получаем дату из path
+			const datePath = getDateFromPath(location.pathname);
+			let monthCld;
+			let yearCld;
+			if (datePath) {
+				monthCld = datePath.getMonth();
+				yearCld = datePath.getFullYear();
+			}
 
-		await app.cld.getDataCalendar(yearCld, monthCld, true);
-	}*/
+			await app.cld.getDataCalendar(yearCld, monthCld, true);
+		}*/
+	}
 }
 
 /** Сигнализирует, что пользователь активен/находится на странице */

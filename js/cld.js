@@ -10,11 +10,12 @@ class Cld {
 
     buildCalendar() {
         const newDate = new Date();
-        CldEl.innerHTML = '';
+        if (CldEl) CldEl.innerHTML = '';
         caleandar(CldEl, [], {}, newDate);
     }
 
     async getDataCalendar(year, month, isUpdate) {
+        //debugger
         if (this.app.stateContainer.lastPoem && this.app.stateContainer.lastTolk) {
             const lastPoemDate = strToDate(this.app.stateContainer.lastPoem.Date);
             const lastTolkDate = strToDate(this.app.stateContainer.lastTolk.Date);

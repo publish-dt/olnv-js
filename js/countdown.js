@@ -37,7 +37,7 @@ class Countdown {
 			let timestr = '--';
 			this.buildBlock(today, thour, tmin, tsec, this.timeleft, timestr);// if (this.timeleft !== -1) timestr = (today > 0 ? '<span class="txt-gray">' + today + '</span>' + declOfNum(today, [' день ', ' дня ', ' дней ']) : '') + '<span class="txt-gray">' + thour + '</span>' + declOfNum(thour, [' час ', ' часа ', ' часов ']) + '<span class="txt-gray">' + tmin + '</span>' + declOfNum(tmin, [' минута ', ' минуты ', ' минут ']) + '<span class="txt-gray">' + tsec + '</span>' + " сек.";
 			//document.getElementById('timeleft').innerHTML = timestr;
-			if (timeleftBlock.classList.contains('hidden')) {
+			if (timeleftBlock && timeleftBlock.classList.contains('hidden')) {
 				timeleftBlock.classList.remove('hidden');
 			}
 		}
@@ -110,7 +110,8 @@ class Countdown {
 
 	buildBlock(today, thour, tmin, tsec, timeleft, timestr) {
 		if (timeleft !== -1) timestr = (today > 0 ? '<span class="txt-gray">' + today + '</span>' + declOfNum(today, [' день ', ' дня ', ' дней ']) : '') + '<span class="txt-gray">' + thour + '</span>' + declOfNum(thour, [' час ', ' часа ', ' часов ']) + '<span class="txt-gray">' + tmin + '</span>' + declOfNum(tmin, [' минута ', ' минуты ', ' минут ']) + '<span class="txt-gray">' + tsec + '</span>' + " сек.";
-		document.getElementById('timeleft').innerHTML = timestr;
+		const timeleftEl = document.getElementById('timeleft');
+		if (timeleftEl) timeleftEl.innerHTML = timestr;
 	}
 
 	async processJsonCountdown(/*data, detail*/) {

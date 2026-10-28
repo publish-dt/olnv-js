@@ -16,7 +16,7 @@ class Router {
         let hash = '';
         let modelSearch;
 
-        const newTab = targetEl ? targetEl.target === '_blank' : false;
+        const isTab = targetEl ? targetEl.target === '_blank' : false;
 
         if (path !== '') {
             let prePage = '';
@@ -81,7 +81,7 @@ class Router {
                         const base64 = await blobToBase64(blob);
 
                         const imgCnt = `<img src="${base64}" style="display: block;-webkit-user-select: none;margin: auto;background-color: hsl(0, 0%, 90%);transition: background-color 300ms;">`;
-                        if (newTab) cnt = imgCnt;
+                        if (isTab) cnt = imgCnt;
                         else document.body.innerHTML = imgCnt;
                     }
                 }
@@ -190,9 +190,10 @@ class Router {
                                 .equalsIgnoreCase(routeVal);
 
                             const isLastYear = path.endsWith('year');
-                            if (!isLastYear && route.ParamView && route.ParamView[0] || (isLastYear && route.Catalogs.includes(this.app.catalogs.tolk))) coll = coll;
-                            else coll = coll.desc();
-                            if (route.ParamView && route.ParamView.length > 1 && route.ParamView[1] === 'year') {
+                            if (!isLastYear && route.ParamView && route.ParamView.sortAsc || (isLastYear && route.Catalogs.includes(this.app.catalogs.tolk))) coll = coll;
+                            else coll = coll.desc(); // сортировка по убыванию
+                            /** отбираем материалы за год */
+                            if (route.ParamView && route.ParamView.filter === 'year') {
                                 const isPoems = route.Catalogs.includes(this.app.catalogs.poems) ? true : (route.Catalogs.some(el => [this.app.catalogs.dict, this.app.catalogs.tolk].includes(el)) ? false : undefined);
                                 params.isPoems = isPoems;
                                 params.lastYear = strToDate((isPoems ? infoLastPoems.Date : infoLastDict.Date)).getFullYear();
@@ -220,9 +221,9 @@ class Router {
 
                         let res;
                         if (route.View)
-                            res = await this.app.views[`render${route.View}`](route, infos, path, params);
-                        else
-                            res = await this.renderView(path, infos, cnt, prePage, lastDict, lastPoem, route, modelSearch);
+                            res = await this.app.views[`render${route.View}`](route, infos, path, params, isTab, prePage, lastDict, lastPoem, modelSearch);
+                        /*else
+                            res = await this.renderView(path, infos, cnt, prePage, lastDict, lastPoem, route, modelSearch);*/
 
                         if (res) {
                             cnt = res.cnt;
@@ -253,62 +254,29 @@ class Router {
             if (documentTitle && path !== 'index') documentTitle = documentTitle;
             else documentTitle = this.app.appName;
 
-            if (newTab) {
+            if (isTab) {
                 /*var divEl = document.createElement('div');
                 divEl.innerHTML = cnt;
-                var newTab = window.open('', documentTitle); // , features
-                newTab.document.body.appendChild(divEl);*/
-                var newWindow = window.open('', documentTitle);
+                var isTab = window.open('', documentTitle); // , features
+                isTab.document.body.appendChild(divEl);*/
+
+                const printLayout = this.app.views.renderPrintLayout(cnt, path, hash, documentTitle, app);
+                const overlayTabEl = document.getElementById('overlay-tab');
+                overlayTabEl.style.display = 'block';
+                overlayTabEl.innerHTML = printLayout;
+
+                onLoadTab(path, hash, app);
+
+                const mainPageEl = document.getElementById('page');
+                mainPageEl.style.display = 'none';
+
+                /*var newWindow = window.open('', documentTitle);
 
                 if (newWindow) {
-                    // Наполняем новую вкладку содержимым
-                    newWindow.document.write(`
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="utf-8" />
-    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
-    <link rel="stylesheet" href="css/lib/bootstrap.min.css" />
-    <link rel="stylesheet" type="text/css" href="css/style.css">
-    <title>${documentTitle}</title>
-</head>
-<body>
-    <div id="page" class="page">
-        <section id="general" class="page_section">
-            <div class="container-fluid">
-                <div class="row">
-                    <main>
-                        <div id="main-cont" class="col-lg-12 col-md-12 col-sm-12 col-xs-12 page-main">
-                            ${cnt}
-                        </div>
-                    </main>
-                </div>
-            </div>
-        </section>
-    </div>
-    <script>
-        window.onload = function () {
-            window.mainContEl = document.getElementById('main-cont');
+                    const printLayout = this.app.views.renderPrintLayout(cnt, path, hash, documentTitle, app);
 
-            const hash = '${hash}';
-            if (hash) {
-                const hashEl = document.getElementsByName(hash);
-                if (hashEl.length > 0) hashEl[0].scrollIntoView();
-            }
-
-            //console.log('test 1');
-            //debugger;
-            const path = '/' + '${this.app.basePath + (path === 'index' ? '' : (path + (!path.startsWith('search?') ? '.html' : ''))) + (hash ? '#' + hash : '')}';
-            //alert(path);
-            history.pushState({}, '', path);
-        };
-    <\/script>
-</body>
-</html>
-                    `);
-
-                    // Закрываем поток записи документа
-                    newWindow.document.close();
+                    newWindow.document.write(printLayout); // Наполняем новую вкладку содержимым
+                    newWindow.document.close(); // Закрываем поток записи документа
 
                     // Помечаем заголовок элемента в результате поиска, как просмотренный
                     if (modelSearch && Object.keys(modelSearch).length > 0) {
@@ -321,7 +289,7 @@ class Router {
                         }
                         else modelSearch.viewedList = [value];
                     }
-                }
+                }*/
             }
             else {
 
@@ -350,9 +318,9 @@ class Router {
             }
         }
 
-        if ((settings !== undefined || !this.app.stateContainer.updateInfo.updateStarted) && !newTab) {
+        if ((settings !== undefined || !this.app.stateContainer.updateInfo.updateStarted) && !isTab) {
             mainContEl.innerHTML = cnt;
-
+            
             // Для календаря получаем дату из path
             const datePath = getDateFromPath(path);
             let monthCld;
@@ -372,120 +340,38 @@ class Router {
             if (hashEl.length > 0) hashEl[0].scrollIntoView();
             //window.location.hash = hash;
         }
-        else if (!firstLoad && !newTab)
+        else if (!firstLoad && !isTab)
             window.mainContEl.scrollIntoView(); //window.scroll(0, 0);
 
         state = posNext !== -1 && !isNext ? undefined : state;
-        if (!newTab) this.app.setHistory(state);
+        if (!isTab) this.app.setHistory(state);
 
         return state;
     }
-
-    async renderView(path, infos, cnt, prePage, lastDict, lastPoem, route, modelSearch) {
-        let listDouble = [];
-        const info = infos[0];
-        const res = {};
-
-        if (info) {
-            const title = route.Title ? route.Title : infos[0].Titles[0];
-            res.title = title;
-
-            const isNoDate = info.Catalog === this.app.catalogs.infos || info.Catalog === this.app.catalogs.notices || info.Catalog === this.app.catalogs.dict || info.Link === '2004/predislovie';
-            const match = !isNoDate ? info.Link.match(/^.*\/(?<date>\d{2}-\d{2}\.\d{2}\.\d{2})$/) : undefined;
-            const dateStr = isNoDate ? '' : (match && match.groups ? match.groups.date : toShortMoscowDate.format(strToDate(info.Date)));
-            cnt += `<h1 class="page-title">${dateStr ? '<span class="date">'+dateStr+'</span> ' : ''}${title}</h1>`;
-
-            for (var j in infos) {
-                const info = infos[j];
-
-                cnt += await this.renderContent(info, lastDict, lastPoem, modelSearch);
-
-                if (route.ByLink) break;
-                else listDouble.push(path);
-            }
-
-            if (info.Link !== 'index') {
-                const isPrint = route.ParamView && route.ParamView.length > 2 ? route.ParamView[2] : false;
-                cnt += this.app.views.renderFooter(path, info, '', '.html', prePage, undefined, isPrint);
-
-            }
-
-            if (route.ByLink && listDouble.length > 1) {
-                console.error(`Вместо одного найдено ${count} элемента! (${listDouble})`);
-            }
-        }
-
-        res.cnt = cnt;
-
-        return res;
-    }
-
-    async renderContent(info, lastDict, lastPoem, modelSearch) {
-        let cnt = undefined;
-        let desc = info.Description;
-
-        if (info.Link === 'index') {
-            desc = desc.replace('{{$lastdict}}', lastDict).replace('{{$lastpoem}}', lastPoem);
-            try {
-                let regexp = RegExp('(.*)(<h2>Разное<\/h2>)', 'gis');
-                let match = regexp.exec(desc);
-                desc = match[0];
-            } catch (e) {
-            }
-        }
-
-        // подсвечиваем найденную фразу
-        if (modelSearch && Object.keys(modelSearch).length > 0) {
-            const searchOptions = "g" + (modelSearch.widthCASE ? '' : 'i');
-            desc = desc.replace(RegExp(modelSearch.patternHightlight, searchOptions), "<span class='hightlight'>" + modelSearch.sectionHightlight + "</span>");
-        }
-
-        cnt = `<div class="razdel poem-blok">${desc}</div>`;
-        if (info.Link === 'index') {
-            cnt += `<div class="cont"><a href="settings.html">Настройки</a></div>`; //  onclick="clearAllData()"
-        }
-
-        // Галлерея
-        if (info.Files && info.Files.length > 0) {
-            cnt += '<!--gallery block-->';
-            for (var i in info.Files) {
-                const file = info.Files[i];
-                if (file) {
-
-                    let base64 = undefined;
-                    const cachedResponse = await cache.match(`/cnt/${info.Id}/${file.Path}`);
-                    if (cachedResponse) {
-                        const blob = await cachedResponse.blob();
-                        const base64 = await blobToBase64(blob);
-
-                        cnt += `
-                                <a href="cnt/${info.Id}/${file.Path}" target="_blank">
-                                    <img src="${base64}" height="120" alt="Изображение" />
-                                </a>
-                                `;
-                    }
-                }
-            }
-            cnt += '<!-- //gallery block -->';
-        }
-
-        if (!info.Data.NoFooter)
-            cnt += `<p class="date-footer">${(toShortMoscowDate.format(strToDate(info.Date)))}</p>`;
-
-        return cnt;
-    }
 }
 
-
-function blobToBase64(blob) {
-    return new Promise((resolve, _) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.readAsDataURL(blob);
-    });
-}
 
 function getRandomInt(max) {
     const min = 1;
     return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function onLoadTab(path, hash, app) {
+    document.getElementById('curLinkF').innerHTML = location.href;
+    document.getElementById('dateF').innerHTML = getCurTime();
+
+    //tooltipstering(true);
+
+    if (hash) {
+        const hashEl = document.getElementsByName(hash);
+        if (hashEl.length > 0) hashEl[0].scrollIntoView();
+    }
+    path = '/' + `${app.basePath + (path === 'index' ? '' : (path + (!path.startsWith('search ? ') ? '.html' : ''))) + (hash ? '#' + hash : '')}`;
+    history.pushState({}, '', path);
+}
+
+function getCurTime() {
+    var date = new Date();
+    var dateF = ("0" + date.getDate()).slice(-2) + "." + ("0" + (date.getMonth() + 1)).slice(-2) + "." + ("0" + date.getFullYear() % 100).slice(-2) + " " + ("0" + (date.getHours())).slice(-2) + ":" + ("0" + (date.getMinutes())).slice(-2); // дата в формате 08.02.2020 13:02
+    return dateF;
 }

@@ -1,4 +1,4 @@
-window.verApp = '1.0.0-beta4';
+window.verApp = '1.0.0-beta5';
 window.netOffline = undefined;
 window.moveCounter = 0; // счётчик движения мыши на странице, если =0, то пользователь не активен на странице
 window.isActiveApp; // прриложение активно/видимо на экране
@@ -35,12 +35,12 @@ const check = async () => {
 function intOnline() {
     window.netOffline = false;
     const internetLostEl = document.getElementById('internet-lost');
-    internetLostEl.style.display = 'none';
+    if (internetLostEl) internetLostEl.style.display = 'none';
 }
 function intOffline() {
     window.netOffline = true;
     const internetLostEl = document.getElementById('internet-lost');
-    internetLostEl.style.display = 'block';
+    if (internetLostEl) internetLostEl.style.display = 'block';
 }
 check();
 setInterval(check, 30000);
@@ -214,7 +214,7 @@ async function download(baseUrl, path, updateCount) {
 
             if (updateCount < 1) {
                 const serverLostEl = document.getElementById('server-lost');
-                serverLostEl.style.display = 'none';
+                if (serverLostEl) serverLostEl.style.display = 'none';
             }
             return data;
         }
@@ -312,3 +312,10 @@ footerYearEl.innerHTML = (new Date()).getFullYear();
 
 const months = ["январь", "февраль", "март", "апрель", "май", "июнь", "июль", "август", "сентябрь", "октябрь", "ноябрь", "декабрь"];
 
+function hideOverlayTab() {
+    const overlayTabEl = document.getElementById('overlay-tab');
+    overlayTabEl.style.display = 'none';
+    overlayTabEl.innerHTML = '';
+
+    document.getElementById('page').style.display = 'block';
+}

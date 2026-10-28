@@ -6,6 +6,101 @@ class Views {
 		this.app = app;
 	}
 
+    async renderInfo(route, infos, path, params, isTab, prePage, lastDict, lastPoem, modelSearch) {
+        let listDouble = [];
+        const info = infos[0];
+        const res = {};
+
+        let cnt = '';
+        if (info) {
+            const title = route.Title ? route.Title : infos[0].Titles[0];
+            res.title = title;
+
+            const isNoDate = info.Catalog === this.app.catalogs.infos || info.Catalog === this.app.catalogs.notices || info.Catalog === this.app.catalogs.dict || info.Link === '2004/predislovie';
+            const match = !isNoDate ? info.Link.match(/^.*\/(?<date>\d{2}-\d{2}\.\d{2}\.\d{2})$/) : undefined;
+            const dateStr = isNoDate ? '' : (match && match.groups ? match.groups.date : toShortMoscowDate.format(strToDate(info.Date)));
+            cnt += `<h1 class="page-title">${dateStr ? '<span class="date">' + dateStr + '</span> ' : ''}${title}</h1>`;
+
+            for (var j in infos) {
+                const info = infos[j];
+
+                cnt += await this.renderContent(info, lastDict, lastPoem, modelSearch);
+
+                if (route.ByLink) break;
+                else listDouble.push(path);
+            }
+
+            if (!isTab && info.Link !== 'index') {
+                const isPrint = route.ParamView && route.ParamView.isPrint;
+                cnt += this.app.views.renderFooter(path, info, '', '.html', prePage, undefined, isPrint);
+
+            }
+
+            if (route.ByLink && listDouble.length > 1) {
+                console.error(`Вместо одного найдено ${count} элемента! (${listDouble})`);
+            }
+        }
+
+        res.cnt = cnt;
+
+        return res;
+    }
+
+    async renderContent(info, lastDict, lastPoem, modelSearch) {
+        let cnt = undefined;
+        let desc = info.Description;
+
+        if (info.Link === 'index') {
+            desc = desc.replace('{{$lastdict}}', lastDict).replace('{{$lastpoem}}', lastPoem);
+            try {
+                let regexp = RegExp('(.*)(<h2>Разное<\/h2>)', 'gis');
+                let match = regexp.exec(desc);
+                desc = match[0];
+            } catch (e) {
+            }
+        }
+
+        // подсвечиваем найденную фразу
+        if (modelSearch && Object.keys(modelSearch).length > 0) {
+            const searchOptions = "g" + (modelSearch.widthCASE ? '' : 'i');
+            desc = desc.replace(RegExp(modelSearch.patternHightlight, searchOptions), "<span class='hightlight'>" + modelSearch.sectionHightlight + "</span>");
+        }
+
+        cnt = `<div class="razdel${info.Catalog === this.app.catalogs.poems ? ' poem-blok' : ''}">${desc}</div>`;
+        if (info.Link === 'index') {
+            cnt += `<div class="cont"><a href="settings.html">Настройки</a></div>`; //  onclick="clearAllData()"
+        }
+
+        // Галлерея
+        if (info.Files && info.Files.length > 0) {
+            cnt += '<!--gallery block-->';
+            for (var i in info.Files) {
+                const file = info.Files[i];
+                if (file) {
+
+                    let base64 = undefined;
+                    const cachedResponse = await cache.match(`/cnt/${info.Id}/${file.Path}`);
+                    if (cachedResponse) {
+                        const blob = await cachedResponse.blob();
+                        const base64 = await blobToBase64(blob);
+
+                        cnt += `
+                                <a href="cnt/${info.Id}/${file.Path}" target="_blank">
+                                    <img src="${base64}" height="120" alt="Изображение" />
+                                </a>
+                                `;
+                    }
+                }
+            }
+            cnt += '<!-- //gallery block -->';
+        }
+
+        if (!info.Data.NoFooter)
+            cnt += `<p class="date-footer">${(toShortMoscowDate.format(strToDate(info.Date)))}</p>`;
+
+        return cnt;
+    }
+
     renderInfoList(route, infos, path, params) {
         const res = {};
         let cnt = '';
@@ -221,4 +316,78 @@ class Views {
         `;
         return { title: title, cnt: cnt };
     }
+
+    renderPrintLayout(cnt, path, hash, documentTitle, app) {
+        const printLayout = `
+    <div class="container-fluid" style="height: 95vh;"><!-- -->
+        <div class="row">
+            <main>
+                <div class="col-lg-11 col-lg-offset-1 col-md-11 col-md-offset-1 col-sm-12 col-xs-12 left-print points-left">
+                    <button onclick="hideOverlayTab()">Назад</button>${cnt}
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <footer>
+        <div class="row">
+            <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 left-print print2">
+                Страница: <span id="curLinkF"></span><br>Подготовлено к печати <span id="dateF"></span>
+            </div>
+        </div><!--/row-->
+    </footer>
+
+    <script>
+
+        window.onload = function () {
+            document.getElementById('dateF').innerHTML = getCurTime();
+            document.getElementById('curLinkF').innerHTML = location.href;
+
+            //tooltipstering(true);
+
+            const hash = '${hash}';
+            if (hash) {
+                const hashEl = document.getElementsByName(hash);
+                if (hashEl.length > 0) hashEl[0].scrollIntoView();
+            }
+            const path = '/' + '${app.basePath + (path === 'index' ? '' : (path + (!path.startsWith('search?') ? '.html' : ''))) + (hash ? '#' + hash : '')}';
+            history.pushState({}, '', path);
+
+        }
+
+        function getCurTime() {
+            var date = new Date();
+            var dateF = ("0" + date.getDate()).slice(-2) + "." + ("0" + (date.getMonth() + 1)).slice(-2) + "." + ("0" + date.getFullYear() % 100).slice(-2) + " " + ("0" + (date.getHours())).slice(-2) + ":" + ("0" + (date.getMinutes())).slice(-2); // дата в формате 08.02.2020 13:02
+            return dateF;
+        }
+
+    </script>
+                    `;
+/*
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <base href="/olnv-js/" /> <!--  -->
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="css/lib/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="css/style-print.css">
+    <title>${documentTitle}</title>
+</head>
+<body style="min-height:100vh">
+
+
+</body>
+</html>
+*/
+        return printLayout;
+    }
+}
+
+function blobToBase64(blob) {
+    return new Promise((resolve, _) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(blob);
+    });
 }
