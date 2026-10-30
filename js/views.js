@@ -6,7 +6,7 @@ class Views {
 		this.app = app;
 	}
 
-    async renderInfo(route, infos, path, params, isTab, prePage, lastDict, lastPoem, modelSearch) {
+    async renderInfo(route, infos, path, params, isTab, prePage, lastDict, lastPoem, modelSearch, isPrintTab) {
         let listDouble = [];
         const info = infos[0];
         const res = {};
@@ -24,15 +24,15 @@ class Views {
             for (var j in infos) {
                 const info = infos[j];
 
-                cnt += await this.renderContent(info, lastDict, lastPoem, modelSearch);
+                cnt += await this.renderContent(info, lastDict, lastPoem, modelSearch, isPrintTab);
 
                 if (route.ByLink) break;
                 else listDouble.push(path);
             }
 
-            if (info.Link !== 'index' && !isTab) {
+            if (info.Link !== 'index' /*&& !isTab*/) {
                 const isPrint = route.ParamView && route.ParamView.isPrint;
-                cnt += this.app.views.renderFooter(path, info, '', '.html', prePage, undefined, isPrint);
+                cnt += this.app.views.renderFooter(path, info, '', '.html', prePage, undefined, isPrint, isTab);
 
             }
 
@@ -46,7 +46,7 @@ class Views {
         return res;
     }
 
-    async renderContent(info, lastDict, lastPoem, modelSearch) {
+    async renderContent(info, lastDict, lastPoem, modelSearch, isPrintTab) {
         let cnt = undefined;
         let desc = info.Description;
 
@@ -61,7 +61,7 @@ class Views {
         }
 
         // подсвечиваем найденную фразу
-        if (modelSearch && Object.keys(modelSearch).length > 0) {
+        if (!isPrintTab && modelSearch && Object.keys(modelSearch).length > 0) {
             const searchOptions = "g" + (modelSearch.widthCASE ? '' : 'i');
             desc = desc.replace(RegExp(modelSearch.patternHightlight, searchOptions), "<span class='hightlight'>" + modelSearch.sectionHightlight + "</span>");
         }
@@ -82,7 +82,7 @@ class Views {
                     const cachedResponse = await cache.match(`/cnt/${info.Id}/${file.Path}`);
                     if (cachedResponse) {
                         const blob = await cachedResponse.blob();
-                        const base64 = await blobToBase64(blob);
+                        const base64 = await this.app.shared.blobToBase64(blob);
 
                         cnt += `
                                 <a href="cnt/${info.Id}/${file.Path}" target="_blank">
@@ -262,29 +262,32 @@ class Views {
         return { cnt: cnt, prePage: prePage, nextPage: nextPage };
 	}
 
-    renderFooter(path, info, prefixPath, suffixPath, prePage, nextPage, isPrint) {
+    renderFooter(path, info, prefixPath, suffixPath, prePage, nextPage, isPrint, isTab) {
 
-        let cnt = `<div class="page-footer">`;
+        let cnt = `<div class="page-footer no-print">`;
+        cnt += `<div class="page-navigate">`;
 
-        if (prePage && ((info && this.app.catalogsIsNext.includes(info.Catalog)) || !info)) {
+        if (!isTab && (prePage && ((info && this.app.catalogsIsNext.includes(info.Catalog)) || !info))) {
             cnt += `<a href="${prefixPath}${prePage}${suffixPath}" class="blue-link-pagination">Предыдущая</a>
                 <img src="img/star.gif" height="15" hspace="10" width="15">`
         }
 
-        cnt += `<button onclick="window.menuBlockEl.scrollIntoView();" class="btn-link blue-link-pagination">В начало страницы</button>`;
+        cnt += `<button onclick="${isTab ? 'window.scroll(0, 0)' : 'window.menuBlockEl.scrollIntoView()'};" class="btn-link blue-link-pagination">В начало страницы</button>`;
 
-        let linkNext = nextPage;
-        if (info && this.app.catalogsIsNext.includes(info.Catalog)) {
-            linkNext = info.Data.Next;
-            if (!info.Data.Next) {
-                linkNext = info.Link + '-next';
+        if (!isTab) {
+            let linkNext = nextPage;
+            if (info && this.app.catalogsIsNext.includes(info.Catalog)) {
+                linkNext = info.Data.Next;
+                if (!info.Data.Next) {
+                    linkNext = info.Link + '-next';
+                }
             }
-        }
-        if (linkNext) {
-            cnt += `<img src="img/star.gif" height="15" hspace="10" width="15">
-                <a href="${prefixPath}${linkNext}${suffixPath}" class="blue-link-pagination">Следующая</a>`;
-            if (info && !info.Data.Next) {
-                cnt += '<span id="label-next" title="Следующей страницы ещё может не быть"> [*]</span><span id="spinner-next" class="bi-spinner"></span>';
+            if (linkNext) {
+                cnt += `<img src="img/star.gif" height="15" hspace="10" width="15">
+                    <a href="${prefixPath}${linkNext}${suffixPath}" class="blue-link-pagination">Следующая</a>`;
+                if (info && !info.Data.Next) {
+                    cnt += '<span id="label-next" title="Следующей страницы ещё может не быть"> [*]</span><span id="spinner-next" class="bi-spinner"></span>';
+                }
             }
         }
 
@@ -296,8 +299,13 @@ class Views {
             <div class="col-xs-6 version-print">
                 <a href="${'print/' + path + '.html'}" data-msu-pageprint='true' target="_blank" class="blue-link-version-print">Версия для печати</a>
             </div>
+            <div class="col-xs-6 post-link">
+                <a href="${path + '.html'}" data-msu-closetab='true' class="blue-link-post">Постоянная ссылка</a>
+            </div>
             `;
         }
+
+        cnt += '</div>';
 
         return cnt;
     }
@@ -318,57 +326,14 @@ class Views {
     }
 
     renderTabLayout(cnt, isPrintTab) {
-/*
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="utf-8" />
-    <base href="/olnv-js/" /> <!--  -->
-    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
-    <link rel="stylesheet" href="css/lib/bootstrap.min.css" />
-    <link rel="stylesheet" type="text/css" href="css/style-print.css">
-    <title>${documentTitle}</title>
-</head>
-<body style="min-height:100vh">
-
-    <script>
-
-        window.onload = function () {
-            document.getElementById('dateF').innerHTML = getCurTime();
-            document.getElementById('curLinkF').innerHTML = location.href;
-
-            //tooltipstering(true);
-
-            const hash = '${hash}';
-            if (hash) {
-                const hashEl = document.getElementsByName(hash);
-                if (hashEl.length > 0) hashEl[0].scrollIntoView();
-            }
-            const path = '/' + '${app.basePath + (path === 'index' ? '' : (path + (!path.startsWith('search?') ? '.html' : ''))) + (hash ? '#' + hash : '')}';
-            history.pushState({}, '', path);
-
-        }
-
-        function getCurTime() {
-            var date = new Date();
-            var dateF = ("0" + date.getDate()).slice(-2) + "." + ("0" + (date.getMonth() + 1)).slice(-2) + "." + ("0" + date.getFullYear() % 100).slice(-2) + " " + ("0" + (date.getHours())).slice(-2) + ":" + ("0" + (date.getMinutes())).slice(-2); // дата в формате 08.02.2020 13:02
-            return dateF;
-        }
-
-    </script>
-
-
-</body>
-</html>
-*/
         const printLayout = `
-        <div class="tab-back-block">
+        <div class="tab-back-block screen-only">
             <span class="tab-back-btn tab-back-btn-top">< назад</span>
         </div>
         <div class="container-fluid tab-main-block">
             <div class="row">
                 <main>
-                    <div class="col-lg-11 col-lg-offset-1 col-md-11 col-md-offset-1 col-sm-12 col-xs-12 ${!isPrintTab ? 'page-main' : 'left-print points-left'}">
+                    <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 col-sm-12 col-xs-12 ${!isPrintTab ? 'page-main' : 'left-print points-left'}">
                         ${cnt}
                     </div>
                 </main>
@@ -380,10 +345,3 @@ class Views {
     }
 }
 
-function blobToBase64(blob) {
-    return new Promise((resolve, _) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.readAsDataURL(blob);
-    });
-}

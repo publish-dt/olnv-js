@@ -3,6 +3,8 @@ export { Router as default };
 class Router {
     constructor(app) {
         this.app = app;
+
+        this.cssLinkPrintLayout;
     }
 
     async navigateToPath(path, firstLoad, targetEl, isUpdate) {
@@ -19,6 +21,7 @@ class Router {
         const isTab = targetEl ? targetEl.target === '_blank' : false;
         const isSearchTab = targetEl && targetEl.dataset.msuPagesearch && (new Boolean(targetEl.dataset.msuPagesearch));
         const isPrintTab = targetEl && targetEl.dataset.msuPageprint && (new Boolean(targetEl.dataset.msuPageprint));
+        const isCloseTab = targetEl && targetEl.dataset.msuClosetab && (new Boolean(targetEl.dataset.msuClosetab));
 
         if (path !== '') {
             let prePage = '';
@@ -80,7 +83,7 @@ class Router {
                     const cachedResponse = await cache.match('/' + path);
                     if (cachedResponse) {
                         const blob = await cachedResponse.blob();
-                        const base64 = await blobToBase64(blob);
+                        const base64 = await this.app.shared.blobToBase64(blob);
 
                         const imgCnt = `<img src="${base64}" style="display: block;-webkit-user-select: none;margin: auto;background-color: hsl(0, 0%, 90%);transition: background-color 300ms;">`;
                         if (isTab) cnt = imgCnt;
@@ -98,7 +101,7 @@ class Router {
                 else {
 
                     /** Получение последнего Послания */
-                    let lastTolkStore = this.app.stateContainer.lastTolk;// JSON.parse(localStorage.getItem('olnvjs_lastTolk'));
+                    let lastTolkStore = this.app.stateContainer.lastTolk;
                     const infoLastDict = lastTolkStore ? lastTolkStore :
                     await db.infos
                         .orderBy('Date')
@@ -106,7 +109,7 @@ class Router {
                         .last();
 
                     /** Получение последнего Катрена */
-                    let lastPoemStore = this.app.stateContainer.lastPoem;// JSON.parse(localStorage.getItem('olnvjs_lastPoem'));
+                    let lastPoemStore = this.app.stateContainer.lastPoem;
                     const infoLastPoems = lastPoemStore ? lastPoemStore :
                     await db.infos
                         .orderBy('Date')
@@ -217,13 +220,13 @@ class Router {
                         }
 
                         if (location.pathname.endsWith('search')) {
-                            if (isSearchTab) modelSearch = this.app.stateContainer.modelSearch;
-                            else this.app.stateContainer.modelSearch = {};
+                            if (isSearchTab || isPrintTab) modelSearch = this.app.stateContainer.modelSearch;
+                            else this.app.stateContainer.modelSearch = {}; // мы покидаем работу с результатами поиска
                         }
 
                         let res;
                         if (route.View)
-                            res = await this.app.views[`render${route.View}`](route, infos, path, params, isTab, prePage, lastDict, lastPoem, modelSearch);
+                            res = await this.app.views[`render${route.View}`](route, infos, path, params, isTab, prePage, lastDict, lastPoem, modelSearch, isPrintTab);
                         /*else
                             res = await this.renderView(path, infos, cnt, prePage, lastDict, lastPoem, route, modelSearch);*/
 
@@ -263,10 +266,22 @@ class Router {
                 overlayTabEl.style.display = 'block';
                 overlayTabEl.innerHTML = printLayout;
 
-                onLoadTab(path, hash, app, isPrintTab);
+                this.onLoadTab(path, hash, app, isPrintTab);
 
                 const mainPageEl = document.getElementById('page');
                 mainPageEl.style.display = 'none';
+
+                // Помечаем заголовок элемента в результате поиска, как просмотренный
+                if (modelSearch && Object.keys(modelSearch).length > 0) {
+                    let titleEl = targetEl;
+                    if (targetEl.firstChild.nodeName !== "#text") titleEl = targetEl.firstChild;
+                    titleEl.setAttribute('style', 'color: peru !important;');
+                    const value = path + (hash ? `#${hash}` : '');
+                    if (Array.isArray(modelSearch.viewedList)) {
+                        if (!modelSearch.viewedList.includes(value)) modelSearch.viewedList.push(value);
+                    }
+                    else modelSearch.viewedList = [value];
+                }
 
                 /*var newWindow = window.open('', documentTitle);
 
@@ -275,18 +290,6 @@ class Router {
 
                     newWindow.document.write(printLayout); // Наполняем новую вкладку содержимым
                     newWindow.document.close(); // Закрываем поток записи документа
-
-                    // Помечаем заголовок элемента в результате поиска, как просмотренный
-                    if (modelSearch && Object.keys(modelSearch).length > 0) {
-                        let titleEl = targetEl;
-                        if (targetEl.firstChild.nodeName !== "#text") titleEl = targetEl.firstChild;
-                        titleEl.setAttribute('style', 'color: peru !important;');
-                        const value = path + (hash ? `#${hash}` : '');
-                        if (Array.isArray(modelSearch.viewedList)) {
-                            if (!modelSearch.viewedList.includes(value)) modelSearch.viewedList.push(value);
-                        }
-                        else modelSearch.viewedList = [value];
-                    }
                 }*/
             }
             else {
@@ -318,7 +321,9 @@ class Router {
 
         if ((settings !== undefined || !this.app.stateContainer.updateInfo.updateStarted) && !isTab) {
             mainContEl.innerHTML = cnt;
-            
+
+            if (isCloseTab) this.hideOverlayTab();
+
             // Для календаря получаем дату из path
             const datePath = getDateFromPath(path);
             let monthCld;
@@ -346,56 +351,56 @@ class Router {
 
         return state;
     }
+
+    onLoadTab(path, hash, app, isPrintTab) {
+        if (isPrintTab) {
+            this.cssLinkPrintLayout = document.createElement('link');
+            this.cssLinkPrintLayout.rel = 'stylesheet';
+            this.cssLinkPrintLayout.href = 'css/style-print.css';
+            document.head.appendChild(this.cssLinkPrintLayout);
+        }
+
+        const btnBack = document.querySelectorAll('.tab-back-btn');
+        if (btnBack) {
+            for (var i = 0; i < btnBack.length; i++) {
+                btnBack[i].addEventListener('click', () => {
+                    this.hideOverlayTab();
+                });
+            }
+        }
+
+        const curLinkEl = document.getElementById('curLinkF');
+        if (curLinkEl) curLinkEl.innerHTML = location.origin + '/' + window.app.basePath + path + '.html'; // location.href
+        const dateEl = document.getElementById('dateF');
+        if (dateEl) dateEl.innerHTML = getCurTime();
+
+        //tooltipstering(true);
+
+        if (hash) {
+            const hashEl = document.getElementsByName(hash);
+            if (hashEl.length > 0) hashEl[0].scrollIntoView();
+        }
+        else window.scroll(0, 0);
+        /*path = '/' + `${app.basePath + (path === 'index' ? '' : (path + (!path.startsWith('search ? ') ? '.html' : ''))) + (hash ? '#' + hash : '')}`;
+        history.pushState({}, '', path);*/
+    }
+
+    hideOverlayTab() {
+        const overlayTabEl = document.getElementById('overlay-tab');
+        overlayTabEl.style.display = 'none';
+        overlayTabEl.innerHTML = '';
+
+        if (this.cssLinkPrintLayout) this.cssLinkPrintLayout.remove();
+
+        document.getElementById('page').style.display = 'block';
+    }
+
 }
 
 
 function getRandomInt(max) {
     const min = 1;
     return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-let cssLinkPrintLayout;
-function onLoadTab(path, hash, app, isPrintTab) {
-    if (isPrintTab) {
-        cssLinkPrintLayout = document.createElement('link');
-        cssLinkPrintLayout.rel = 'stylesheet';
-        cssLinkPrintLayout.href = 'css/style-print.css';
-        document.head.appendChild(cssLinkPrintLayout);
-    }
-
-    const btnBack = document.querySelectorAll('.tab-back-btn');
-    if (btnBack) {
-        for (var i = 0; i < btnBack.length; i++) {
-            btnBack[i].addEventListener('click', () => {
-                hideOverlayTab();
-            });
-        }
-    }
-
-    const curLinkEl = document.getElementById('curLinkF');
-    if (curLinkEl) curLinkEl.innerHTML = location.href;
-    const dateEl = document.getElementById('dateF');
-    if (dateEl) dateEl.innerHTML = getCurTime();
-
-    //tooltipstering(true);
-
-    if (hash) {
-        const hashEl = document.getElementsByName(hash);
-        if (hashEl.length > 0) hashEl[0].scrollIntoView();
-    }
-    else window.scroll(0, 0);
-    /*path = '/' + `${app.basePath + (path === 'index' ? '' : (path + (!path.startsWith('search ? ') ? '.html' : ''))) + (hash ? '#' + hash : '')}`;
-    history.pushState({}, '', path);*/
-}
-
-function hideOverlayTab() {
-    const overlayTabEl = document.getElementById('overlay-tab');
-    overlayTabEl.style.display = 'none';
-    overlayTabEl.innerHTML = '';
-
-    if (cssLinkPrintLayout) cssLinkPrintLayout.remove();
-
-    document.getElementById('page').style.display = 'block';
 }
 
 function getCurTime() {

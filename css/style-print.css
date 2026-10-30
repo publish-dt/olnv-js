@@ -36,8 +36,8 @@ body {
 }
 
 .left-print {
-	margin-left: 59pt; /* пустое поле слева */
-	padding-left: 25pt; /*было 15pt*/
+	/*margin-left: 59pt;*/ /* пустое поле слева */
+	/*padding-left: 25pt;*/ /*было 15pt*/
 	padding-bottom: 24pt;
 }
 /*прерывистая граница слева + внутренние отступы до текста*/
@@ -244,5 +244,16 @@ P.poem {
 }
 
 .tab-main-block {
-	padding-top: 25px;
+	padding-top: 35px;
+}
+
+@media print {
+	.tab-main-block {
+		margin-left: 59pt;
+		padding-left: 25pt;
+	}
+}
+
+.no-print {
+	display: none;
 }

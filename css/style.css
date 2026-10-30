@@ -831,7 +831,7 @@ p.c0 {
 /*НИЖНЯЯ ЧАСТЬ ЦЕНТРАЛЬНОЙ СТРАНИЦЫ*/
 /*-----------------------------------------------------------*/
 /*Переход в начало страницы и между страницами*/
-.page-footer {
+.page-navigate {
 	width: 100%;
 	padding-top: 40px;
 	padding-bottom: 40px;
@@ -840,15 +840,15 @@ p.c0 {
 	margin-bottom: 10px;
 }
 /*для слов "В начало страницы" и "На следующую"*/
-.page-footer a{
+.page-navigate a{
 	color: #9CF;
 	text-decoration: none;
 	font-size: 20px;
 }
-.page-footer a:hover{
+.page-navigate a:hover{
 	color: #FFF;
 }
-.page-footer a:active{
+.page-navigate a:active{
 	color: #CEF;
 }
 
@@ -1744,6 +1744,7 @@ SPAN.c2, SPAN.c3, SPAN.c4, SPAN.c5 {
 	top: 0;
 	position: fixed;
 	width: 100%;
+	line-height: 2;
 	border-bottom-style: outset;
 	z-index: 3;
 	background-color: #424242;
@@ -1753,11 +1754,22 @@ SPAN.c2, SPAN.c3, SPAN.c4, SPAN.c5 {
 	cursor: pointer;
 	font-size: 22px !important;
 	text-align: left;
-	margin-left: 10px;
-	/*line-height: 2;*/
+	padding-left: 10px;
+	padding-bottom: 10px;
+	padding-top: 10px;
 }
 
 .tab-main-block {
 	height: 91vh;
-	padding-top: 15px;
+	padding-top: 25px;
+}
+
+@media print {
+	.tab-main-block {
+		padding-top: 0;
+	}
+
+	.screen-only {
+		display: none;
+	}
 }

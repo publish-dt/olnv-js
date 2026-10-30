@@ -1,4 +1,4 @@
-window.verApp = '1.0.0-beta7';
+window.verApp = '1.0.0-beta8';
 window.netOffline = undefined;
 window.moveCounter = 0; // счётчик движения мыши на странице, если =0, то пользователь не активен на странице
 window.isActiveApp; // прриложение активно/видимо на экране

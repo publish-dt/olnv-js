@@ -5,6 +5,7 @@ import Search from './search.js';
 import Views from './views.js';
 import Cld from './cld.js';
 import Countdown from './countdown.js';
+import Shared from './shared.js';
 
 class App {
 	constructor() {
@@ -140,6 +141,7 @@ class App {
 		this.views = new Views(this);
 		this.cld = new Cld(this);
 		this.countdown = new Countdown(this);
+		this.shared = new Shared(this);
 	}
 
 	async init() {
