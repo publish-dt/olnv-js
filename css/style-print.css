@@ -236,12 +236,13 @@ P.poem {
 	opacity: 0.3;
 }
 
-.tab-back-btn-top {
-	margin-top: 10px !important;
-	margin-bottom: 10px !important;
-	border-bottom: 4px double #000000 !important;
+
+/* Работа с вкладками */
+
+.tab-back-block {
+	color: #e8e8e8;
 }
 
-.page-footer {
-	border-bottom: 4px double #000000 !important;
+.tab-main-block {
+	padding-top: 25px;
 }

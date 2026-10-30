@@ -7,7 +7,7 @@ class DB {
 		//this.router = app.router;
 	}
 
-	async fillDb(isAwait) {
+	async fillDb(noNavigate) {
 
 		if (this.app.stateContainer.updateInfo.updateStarted)
 			return; // если загрузка архивов данных уже началась, то не запускаем её ещё раз
@@ -39,14 +39,14 @@ class DB {
 			isLastCheckGood = true;
 
 			if (Object.keys(res).length > 0) {
-				if (!isAwait && (res.numberNewData > 0 || res.numberChangeData > 0)) {
+				if (!noNavigate && (res.numberNewData > 0 || res.numberChangeData > 0)) {
 					alert(`Загружено: ${res.numberNewData} новых материалов и ${res.numberChangeData} изменённых материалов`);
+					isUpdated = true;
 				}
 
 				lastUpdated = lastCheck;
 				this.app.stateContainer.updateInfo.lastUpdated = lastUpdated;
 				if (lastUpdated) localStorage.setItem('olnvjs_lastUpdated', JSON.stringify(lastUpdated));
-				isUpdated = true;
 			}
 		}
 		else {
@@ -73,8 +73,8 @@ class DB {
 		this.app.stateContainer.updateInfo.updateStarted = false;
 
 
-		if (!isAwait && isUpdated)
-			this.app.router.navigateToPath(this.app.getPath(location.href), null, null, true);
+		if (!noNavigate && isUpdated)
+			this.app.router.navigateToPath(this.app.getPath(location.href), null, null, true); // это нужно, чтобы обновить текущий материал, т.к. в нём могли произойти изменения
 
 		console.log(`В базе: ${db ? await db.infos.count() : 0} материалов`);
 

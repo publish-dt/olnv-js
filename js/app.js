@@ -191,6 +191,7 @@ class App {
 			this.stateContainer.lastPoem = JSON.parse(localStorage.getItem('olnvjs_lastPoem'));
 
 
+			window.menuBlockEl = document.getElementById('menu-block');
 			window.mainContEl = document.getElementById('main-cont');
 			window.quoteBlockEl = document.getElementById('quote-block');
 			window.formEl = document.getElementById('search');
@@ -202,7 +203,7 @@ class App {
 			if (!isExist)
 				createDB();
 
-			this.myDB.fillDb();
+			const res = await this.myDB.fillDb();
 
 			this.cld.buildCalendar();
 
@@ -220,8 +221,8 @@ class App {
 					pathChanged = true;
 				}
 			}*/
-			const state = await this.router.navigateToPath(path, true);
-			//if (pathChanged) this.setHistory(state);
+			if (!(res && Object.keys(res).length > 0 && (res.numberNewData > 0 || res.numberChangeData > 0))) // навигация НЕ была произведена в fillDb
+				await this.router.navigateToPath(path, true);
 
 		} catch (e) {
 			console.error(e);
@@ -294,7 +295,8 @@ window.onclick = async function (event) {
 			event.preventDefault(); // нужно размещать обязательно перед fillDb, иначе fetch не сработает
 
 			let path = app.getPath(url);
-            if (path !== '#') {
+			if (path !== '#') {
+				let isUpdate;
 				if (path.endsWith('-next')) {
 					const labelNextEl = document.getElementById('label-next');
 					labelNextEl.style.display = 'none';
@@ -302,12 +304,13 @@ window.onclick = async function (event) {
 					spinnerNextEl.style.display = 'inline-block';
 
 					await app.myDB.fillDb(true);
+					isUpdate = true;
 
 					labelNextEl.style.display = 'inline-block';
 					spinnerNextEl.style.display = 'none';
 				}
 				try {
-					const state = await app.router.navigateToPath(path, false, targetEl);
+					const state = await app.router.navigateToPath(path, false, targetEl, isUpdate);
 				} catch (e) {
 					console.error(e);
 				}

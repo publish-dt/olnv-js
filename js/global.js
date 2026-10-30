@@ -1,8 +1,13 @@
-window.verApp = '1.0.0-beta6';
+window.verApp = '1.0.0-beta7';
 window.netOffline = undefined;
 window.moveCounter = 0; // счётчик движения мыши на странице, если =0, то пользователь не активен на странице
 window.isActiveApp; // прриложение активно/видимо на экране
 window.isOnDebug;
+
+/*window.ym?.(ID_СЧЁТЧИКА, 'params', {
+    version: verApp,
+    //mode: mode,
+});*/
 
 window.onerror = function (message, url, line, col, error) {
     if (window.isOnDebug)
@@ -239,9 +244,18 @@ async function download(baseUrl, path, updateCount) {
 
 // получаем хост/url из DNS-записи
 async function getAddressFromDNS() {
-// список публичных dns-resolvers можно получить здесь: https://en.wikipedia.org/wiki/DNS_over_HTTPS или https://dnsprivacy.org/public_resolvers/#dns-over-https-doh
+    // список публичных dns-resolvers можно получить здесь: https://en.wikipedia.org/wiki/DNS_over_HTTPS или https://dnsprivacy.org/public_resolvers/#dns-over-https-doh
 
     if (this.app.configApp.domainDNS) {
+        const res = await download("https://dns.google/resolve?name=" + this.app.configApp.domainDNS + "&type=TXT");
+        if (res && res.Answer && res.Answer.length > 0) {
+            const data = res.Answer[0].data;
+            if (data) {
+                const dataArr = data.replace(/'/gi, '').split('=');
+                if (dataArr && dataArr.length > 1 && dataArr[0] === 'dnslink' && dataArr[1]) return dataArr[1];
+            }
+        }
+
         /*let xhr = new XMLHttpRequest();
         xhr.open("GET", "https://dns.google/resolve?name=" + this.app.configApp.domainDNS + "&type=TXT");
         xhr.send();
@@ -263,15 +277,6 @@ async function getAddressFromDNS() {
         xhr.onerror = function () { // происходит, только когда запрос совсем не получилось выполнить
             if (isOnDebug) console.log("Ошибка соединения");
         };*/
-
-        const res = await download("https://dns.google/resolve?name=" + this.app.configApp.domainDNS + "&type=TXT");
-        if (res.Answer && res.Answer.length > 0) {
-            const data = res.Answer[0].data;
-            if (data) {
-                const dataArr = data.replace(/'/gi, '').split('=');
-                if (dataArr && dataArr.length > 1 && dataArr[0] === 'dnslink' && dataArr[1]) return dataArr[1];
-            }
-        }
     }
 }
 

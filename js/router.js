@@ -18,6 +18,7 @@ class Router {
 
         const isTab = targetEl ? targetEl.target === '_blank' : false;
         const isSearchTab = targetEl && targetEl.dataset.msuPagesearch && (new Boolean(targetEl.dataset.msuPagesearch));
+        const isPrintTab = targetEl && targetEl.dataset.msuPageprint && (new Boolean(targetEl.dataset.msuPageprint));
 
         if (path !== '') {
             let prePage = '';
@@ -162,8 +163,8 @@ class Router {
                                     prePage = info.Link;
                                 });
 
-                            //cnt = await this.renderContent(info, cnt, prePage, lastDict, lastPoem);
-                            const res = await this.renderView(path, infos, cnt, prePage, lastDict, lastPoem, route);
+                            const res = await this.app.views[`render${route.View}`](route, infos, path, params, isTab, prePage, lastDict, lastPoem, modelSearch);
+                            //const res = await this.renderView(path, infos, cnt, prePage, lastDict, lastPoem, route);
                             cnt = res.cnt;
                             state.title = res.title;
                         }
@@ -256,17 +257,13 @@ class Router {
             else documentTitle = this.app.appName;
 
             if (isTab) {
-                /*var divEl = document.createElement('div');
-                divEl.innerHTML = cnt;
-                var isTab = window.open('', documentTitle); // , features
-                isTab.document.body.appendChild(divEl);*/
 
-                const printLayout = this.app.views.renderPrintLayout(cnt, isSearchTab);
+                const printLayout = this.app.views.renderTabLayout(cnt, isPrintTab);
                 const overlayTabEl = document.getElementById('overlay-tab');
                 overlayTabEl.style.display = 'block';
                 overlayTabEl.innerHTML = printLayout;
 
-                onLoadTab(path, hash, app, isSearchTab);
+                onLoadTab(path, hash, app, isPrintTab);
 
                 const mainPageEl = document.getElementById('page');
                 mainPageEl.style.display = 'none';
@@ -274,7 +271,7 @@ class Router {
                 /*var newWindow = window.open('', documentTitle);
 
                 if (newWindow) {
-                    const printLayout = this.app.views.renderPrintLayout(cnt, path, hash, documentTitle, app);
+                    const printLayout = this.app.views.renderTabLayout(cnt, path, hash, documentTitle, app);
 
                     newWindow.document.write(printLayout); // Наполняем новую вкладку содержимым
                     newWindow.document.close(); // Закрываем поток записи документа
@@ -342,7 +339,7 @@ class Router {
             //window.location.hash = hash;
         }
         else if (!firstLoad && !isTab)
-            window.mainContEl.scrollIntoView(); //window.scroll(0, 0);
+            window.mainContEl.scrollIntoView();
 
         state = posNext !== -1 && !isNext ? undefined : state;
         if (!isTab) this.app.setHistory(state);
@@ -358,8 +355,8 @@ function getRandomInt(max) {
 }
 
 let cssLinkPrintLayout;
-function onLoadTab(path, hash, app, isSearch) {
-    if (!isSearch) {
+function onLoadTab(path, hash, app, isPrintTab) {
+    if (isPrintTab) {
         cssLinkPrintLayout = document.createElement('link');
         cssLinkPrintLayout.rel = 'stylesheet';
         cssLinkPrintLayout.href = 'css/style-print.css';
@@ -386,6 +383,7 @@ function onLoadTab(path, hash, app, isSearch) {
         const hashEl = document.getElementsByName(hash);
         if (hashEl.length > 0) hashEl[0].scrollIntoView();
     }
+    else window.scroll(0, 0);
     /*path = '/' + `${app.basePath + (path === 'index' ? '' : (path + (!path.startsWith('search ? ') ? '.html' : ''))) + (hash ? '#' + hash : '')}`;
     history.pushState({}, '', path);*/
 }
