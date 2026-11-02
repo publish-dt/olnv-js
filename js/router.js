@@ -18,10 +18,12 @@ class Router {
         let hash = '';
         let modelSearch;
 
+        let isPrintTab;
         const isTab = targetEl ? targetEl.target === '_blank' : false;
         const isSearchTab = targetEl && targetEl.dataset.msuPagesearch && (new Boolean(targetEl.dataset.msuPagesearch));
-        const isPrintTab = targetEl && targetEl.dataset.msuPageprint && (new Boolean(targetEl.dataset.msuPageprint));
-        const isCloseTab = targetEl && targetEl.dataset.msuClosetab && (new Boolean(targetEl.dataset.msuClosetab));
+        const isCloseTab = targetEl && targetEl.dataset.msuClosetab && (new Boolean(targetEl.dataset.msuClosetab)); // клик по "Постоянная ссылка", чтобы закрыть оверлей
+
+        console.log('Переход к пути: ' + path);
 
         if (path !== '') {
             let prePage = '';
@@ -77,6 +79,7 @@ class Router {
 
                 if (path.startsWith('print/')) {
                     path = path.substring('print/'.length);
+                    isPrintTab = targetEl && targetEl.dataset.msuPageprint && (new Boolean(targetEl.dataset.msuPageprint));
                 }
 
                 if (path.startsWith('cnt/')) {
@@ -227,13 +230,28 @@ class Router {
                         let res;
                         if (route.View)
                             res = await this.app.views[`render${route.View}`](route, infos, path, params, isTab, prePage, lastDict, lastPoem, modelSearch, isPrintTab);
-                        /*else
-                            res = await this.renderView(path, infos, cnt, prePage, lastDict, lastPoem, route, modelSearch);*/
 
                         if (res) {
                             cnt = res.cnt;
                             state.title = res.title;
                             documentTitle = res.title;
+
+                            if (res.cnt && !isTab) {
+                                const ulMenu = document.querySelector('ul.top-menu-ul');
+                                if (ulMenu) {
+                                    const itemsMenu = ulMenu.children;
+
+                                    for (let i = 0; i < itemsMenu.length; i++) {
+                                        const li = itemsMenu[i];
+                                        if (li.tagName === 'LI') {
+                                            let pathMenu = li.firstChild.pathname;
+                                            if (pathMenu.substring(1, pathMenu.length - 5) === path)
+                                                li.classList.add('active');
+                                            else li.classList.remove('active');
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -261,10 +279,15 @@ class Router {
 
             if (isTab) {
 
-                const printLayout = this.app.views.renderTabLayout(cnt, isPrintTab);
+                if (!this.app.stateContainer.tabLayout.nowIsTab) // это не должен быть переход в printLayout из обычного Tab
+                    this.app.stateContainer.tabLayout.scrollY = window.pageYOffset !== undefined ? window.pageYOffset : document.documentElement.scrollTop; // запоминаем текущую позицию вертикальной прокрутки
+
+                this.app.stateContainer.tabLayout.nowIsTab = true;
+
+                const tabLayout = this.app.views.renderTabLayout(cnt, isPrintTab);
                 const overlayTabEl = document.getElementById('overlay-tab');
                 overlayTabEl.style.display = 'block';
-                overlayTabEl.innerHTML = printLayout;
+                overlayTabEl.innerHTML = tabLayout;
 
                 this.onLoadTab(path, hash, app, isPrintTab);
 
@@ -360,13 +383,15 @@ class Router {
             document.head.appendChild(this.cssLinkPrintLayout);
         }
 
-        const btnBack = document.querySelectorAll('.tab-back-btn');
+        const btnBack = document.querySelector/*All*/('.tab-back-btn');
         if (btnBack) {
-            for (var i = 0; i < btnBack.length; i++) {
-                btnBack[i].addEventListener('click', () => {
-                    this.hideOverlayTab();
-                });
-            }
+            //for (var i = 0; i < btnBack.length; i++) {
+            btnBack/*[i]*/.addEventListener('click', () => {
+                this.hideOverlayTab();
+                if (this.app.stateContainer.tabLayout.scrollY)
+                    window.scrollTo({ top: this.app.stateContainer.tabLayout.scrollY });
+            });
+            //}
         }
 
         const curLinkEl = document.getElementById('curLinkF');
@@ -393,6 +418,8 @@ class Router {
         if (this.cssLinkPrintLayout) this.cssLinkPrintLayout.remove();
 
         document.getElementById('page').style.display = 'block';
+
+        this.app.stateContainer.tabLayout.nowIsTab = false;
     }
 
 }

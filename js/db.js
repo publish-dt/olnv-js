@@ -85,7 +85,7 @@ class DB {
 		const res = {};
 
 		const lastDateChange = strToDate(serviceDwld.LastDateChange);
-		const lastDateChangeStore = (serviceData === undefined || serviceData.LastDateChange === undefined ? strToDate(new Date(0, 0, 0)) : strToDate(serviceData.LastDateChange));
+		const lastDateChangeStore = (serviceData === undefined || serviceData.LastDateChange === undefined ? toMoscowDate(new Date(0, 0, 0)) : strToDate(serviceData.LastDateChange));
 		if (serviceData === undefined || lastDateChange > lastDateChangeStore) {
 			let nameZip = serviceData === undefined || Math.round((lastDateChange - lastDateChangeStore) / (1000 * 60 * 60 * 24)) >= 7 ? "full" : "last";
 
@@ -211,7 +211,7 @@ class DB {
 		for (var i in serviceDwld.InfoFiles) {
 
 			const lastDateChange = strToDate(serviceDwld.InfoFiles[i]);
-			const lastDateChangeStore = (serviceData === undefined || serviceData.InfoFiles === undefined || serviceData.InfoFiles[i] === undefined ? strToDate(0, 0, 0) : strToDate(serviceData.InfoFiles[i]));
+			const lastDateChangeStore = (serviceData === undefined || serviceData.InfoFiles === undefined || serviceData.InfoFiles[i] === undefined ? toMoscowDate(new Date(0, 0, 0)) : strToDate(serviceData.InfoFiles[i]));
 			if (serviceData === undefined || lastDateChange > lastDateChangeStore) {
 				const nameZip = i;
 

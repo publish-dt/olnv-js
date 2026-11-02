@@ -1,4 +1,4 @@
-window.verApp = '1.0.0-beta8';
+window.verApp = '1.0.0-beta9';
 window.netOffline = undefined;
 window.moveCounter = 0; // счётчик движения мыши на странице, если =0, то пользователь не активен на странице
 window.isActiveApp; // прриложение активно/видимо на экране
@@ -121,20 +121,20 @@ function intToRoman(num) {
 
 
 /** Возвращаем московское время */
-function toMoscowDate(date) {
-    let nowLocal;
-    if (date) nowLocal = new Date(date);
-    else nowLocal = new Date();
-    const targetOffset = 180; // UTC+3
-    const adjustedTimestamp = nowLocal.getTime() + (nowLocal.getTimezoneOffset() * 60 * 1000) + (targetOffset * 60 * 1000);
-    const now = new Date(adjustedTimestamp); // текущее московское время (даже если приложение выполняется не в московском времени)
+function toMoscowDate(date, isMoscowDate) {
+    let dateLocal;
+    if (date) dateLocal = new Date(date);
+    else dateLocal = new Date();
+    const targetOffset = date && isMoscowDate ? Math.abs(dateLocal.getTimezoneOffset()) : 180; // UTC+3 (но, например, для 2013 года будет UTC+4)
+    const adjustedTimestamp = dateLocal.getTime() + (dateLocal.getTimezoneOffset() * 60 * 1000) + (targetOffset * 60 * 1000);
+    const now = new Date(adjustedTimestamp); // московское время (даже если приложение выполняется не в московском времени)
 
     return now;
 }
-/** Возвращаем московское время */
+/** Возвращаем московское время (в эту функцию всегда должно приходить московское время) */
 function strToDate(date) {
-    const dateLocal = new Date(date);
-    const dateMoscow = toMoscowDate(dateLocal);
+    const dateMoscow/*dateLocal*/ = new Date(date);
+    //const dateMoscow = toMoscowDate(dateLocal, true);
     return dateMoscow;
 }
 /** Форматирование даты */

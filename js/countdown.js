@@ -224,13 +224,10 @@ class Countdown {
 	}
 
 	async getServerTime() {
-		// https://timezonedb.com/
         try {
 			const timeZoneName = Intl.DateTimeFormat().resolvedOptions().timeZone;
 			const res = await download('https://timeapi.io/api/Time/current/zone?timeZone=' + timeZoneName);
-			//const resUTC = await download('https://timeapi.io/api/v1/time/current/utc');
-			//const resUTC = await download('https://timeapi.io/api/v1/time/current/unix_ms'); // https://yandex.com/time/sync.json не работают, т.к. CORS
-			const date = new Date(res.dateTime); // unix_timestamp utc_time
+			const date = new Date(res.dateTime);
 			const localTime = new Date();
 			console.log('Разница между локальным и серверным временем = ' + (localTime - date));
 			return date;
