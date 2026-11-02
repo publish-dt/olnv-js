@@ -16,7 +16,9 @@ class Views {
             const title = route.Title ? route.Title : infos[0].Titles[0];
             res.title = title;
 
-            const isNoDate = info.Catalog === this.app.catalogs.infos || info.Catalog === this.app.catalogs.notices || info.Catalog === this.app.catalogs.dict || info.Link === '2004/predislovie';
+            const isNoDate = info.Catalog === this.app.catalogs.infos || info.Catalog === this.app.catalogs.notices || info.Catalog === this.app.catalogs.dict
+                || info.Link === '2004/predislovie' || info.Link === '2009/predislovie'
+                || info.Link === '2005/09.09.05' || info.Link === '2005/23.09.05' || info.Link === '2005/24.09.05';
             const match = !isNoDate ? info.Link.match(/^.*\/(?<date>\d{2}-\d{2}\.\d{2}\.\d{2})$/) : undefined;
             const dateStr = isNoDate ? '' : (match && match.groups ? match.groups.date : toShortMoscowDate.format(strToDate(info.Date)));
             cnt += `<h1 class="page-title">${dateStr ? '<span class="date">' + dateStr + '</span> ' : ''}${title}</h1>`;
@@ -68,7 +70,7 @@ class Views {
 
         cnt = `<div class="razdel${info.Catalog === this.app.catalogs.poems ? ' poem-blok' : ''}">${desc}</div>`;
         if (info.Link === 'index') {
-            cnt += `<div class="cont"><a href="settings.html">Настройки</a></div>`; //  onclick="clearAllData()"
+            cnt += `<div class="cont"><a href="settings.html">Настройки</a></div>`;
         }
 
         // Галлерея
@@ -317,7 +319,7 @@ class Views {
         <ul class="settings">
             <li>Фоновое изображение (“звёздное небо”):<input type="checkbox" onchange="OnOffStarsBg(!this.checked)" ${window.app.settings.isOffStarsBg ? '' : 'checked'} style="width: 40px;"></li>
             <li>Url для обновления информации: <input id="set-domain" onblur="setDomain(this)" oninput="setDomainInput(this)" value="${window.app.settings.urlUpdate ? this.app.settings.urlUpdate : ''}" style="width: 320px;" title="Альтернативный URL для получения новой информации (например: https://example.com/data/exp)"></li>
-            <li>Удалить все материалы: <button type="button" onclick="clearAllData()" class="btn btn-danger" title="На данном компьютере, удаляет из базы данных всю ранее загруженную информацию (это может понадобиться, если необходимо заново загрузить все материалы)">Удалить</button></li>
+            <li>Удалить все материалы: <button data-clear-data="true" type="button" class="btn btn-danger" title="На данном компьютере, удаляет из базы данных всю ранее загруженную информацию (это может понадобиться, если необходимо заново загрузить все материалы)">Удалить</button></li>
             <li>Версия приложения: ${window.verApp}</li>
             <li>Режим отладки: <input type="checkbox" onchange="OnOffDebug(this.checked)" ${window.app.settings.isOnDebug ? 'checked' : ''} style="width: 40px;"></li>
         </ul>

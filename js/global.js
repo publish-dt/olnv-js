@@ -1,4 +1,4 @@
-window.verApp = '1.0.0-beta9';
+window.verApp = '1.0.0-beta10';
 window.netOffline = undefined;
 window.moveCounter = 0; // счётчик движения мыши на странице, если =0, то пользователь не активен на странице
 window.isActiveApp; // прриложение активно/видимо на экране
@@ -121,11 +121,11 @@ function intToRoman(num) {
 
 
 /** Возвращаем московское время */
-function toMoscowDate(date, isMoscowDate) {
+function toMoscowDate(date) {
     let dateLocal;
     if (date) dateLocal = new Date(date);
     else dateLocal = new Date();
-    const targetOffset = date && isMoscowDate ? Math.abs(dateLocal.getTimezoneOffset()) : 180; // UTC+3 (но, например, для 2013 года будет UTC+4)
+    const targetOffset = date ? Math.abs(getTimeZoneOffset(dateLocal)) : 180; // UTC+3 (но, например, для 2013 года будет UTC+4)
     const adjustedTimestamp = dateLocal.getTime() + (dateLocal.getTimezoneOffset() * 60 * 1000) + (targetOffset * 60 * 1000);
     const now = new Date(adjustedTimestamp); // московское время (даже если приложение выполняется не в московском времени)
 
@@ -134,7 +134,7 @@ function toMoscowDate(date, isMoscowDate) {
 /** Возвращаем московское время (в эту функцию всегда должно приходить московское время) */
 function strToDate(date) {
     const dateMoscow/*dateLocal*/ = new Date(date);
-    //const dateMoscow = toMoscowDate(dateLocal, true);
+    //const dateMoscow = toMoscowDate(dateLocal);
     return dateMoscow;
 }
 /** Форматирование даты */
@@ -169,7 +169,39 @@ function getDateFromPath(path) {
             return new Date(Number('20' + year), Number(month) - 1, Number(day));
     }
 }
+function getTimeZoneOffset(date) {
+    const timeZone = 'Europe/Moscow';
+    const options = {
+        timeZone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+    };
+    // Форматируем дату в нужном поясе
+    const parts = Intl.DateTimeFormat('en-US', options).formatToParts(date);
 
+    // Находим час и минуту в этом поясе
+    let hour = 0, minute = 0;
+    for (const part of parts) {
+        if (part.type === 'hour') hour = parseInt(part.value, 10);
+        if (part.type === 'minute') minute = parseInt(part.value, 10);
+    }
+
+    // Теперь создаём дату в UTC и считаем разницу
+    const utcDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), hour, minute));
+    const localDateInTargetZone = new Date(date);
+    localDateInTargetZone.setHours(hour, minute, 0, 0);
+
+    // Хитрость: проще всего получить смещение как разницу между «датой в целевом поясе» и UTC
+    // Но самый надёжный способ без библиотек — сравнить timestamp
+    const targetTimestamp = localDateInTargetZone.getTime();
+    const utcTimestamp = utcDate.getTime();
+    const diffMs = targetTimestamp - utcTimestamp;
+    return Math.round(diffMs / (1000 * 60)); // в минутах
+}
 
 function sleep(ms) {
     return new Promise(resolve => {
@@ -190,7 +222,12 @@ function createDB(exists) {
     }
 }
 
-function clearAllData() {
+function openCache(name) {
+    caches.open(name)
+        .then(cache => window.cache = cache);
+}
+
+/*function clearAllData() {
     if (confirm(`Очистить базу данных?`)) { //  (версия: ${window.verApp})
         db.delete({ disableAutoOpen: false });
 
@@ -203,8 +240,9 @@ function clearAllData() {
         }
 
         caches.delete('cnt');
+        window.app.stateContainer = new StateContainer();
     }
-}
+}*/
 
 async function download(baseUrl, path, updateCount) {
     let url = baseUrl;

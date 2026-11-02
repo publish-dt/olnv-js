@@ -28,7 +28,7 @@ class Cld {
                 selectYear.add(option);
             }
 
-            if (!year || !month) {
+            if (!year || (!month && month !== 0)) {
                 const curDate = toMoscowDate();
                 month = this.maxCldMonth ? this.maxCldMonth : curDate.getMonth();
                 year = this.maxCldYear ? this.maxCldYear : curDate.getFullYear();

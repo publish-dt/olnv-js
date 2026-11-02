@@ -30,6 +30,10 @@ class DB {
 		if (serviceDwld) {
 			const isExist = await Dexie.exists('OtkDB');
 			if (!isExist) createDB();
+
+			const isOpenCache = await caches.has("cnt");
+			if (!isOpenCache) openCache('cnt');
+
 			const serviceData = await db.settings.get('serviceData');
 
 			res = await this.fillInfos(serviceDwld, serviceData, url, this.app);

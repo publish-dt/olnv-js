@@ -8,9 +8,9 @@ class StateContainer {
             lastCheck: undefined, // время последней проверки (информация могла быть не загружена, т.к. её небыло или ошибка загрузки)
             lastUpdated: undefined // время последней проверки при которой была загружена информация
         };
-
         this.modelSearch = {};
-
         this.tabLayout = {};
+        this.lastTolk;
+        this.lastPoem;
     }
 }

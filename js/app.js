@@ -147,6 +147,8 @@ class App {
 	async init() {
 
 		try {
+			this.basePath = this.getPath(document.baseURI, true);
+
 			const urlUpdate = localStorage.getItem('olnvjs_urlUpdate');
 			if (urlUpdate) {
 				this.urlUpdate = urlUpdate;
@@ -214,7 +216,6 @@ class App {
 
 			/** получаем последнюю открытую пользователем страницу */
 			let pathChanged = false;
-			this.basePath = this.getPath(document.baseURI, true);
 			let path = this.getPath(location.href);
 			/*if (path === 'index') {
 				const bookmarks = await dbApp.settings.get('bookmarks');
@@ -252,7 +253,6 @@ class App {
 		}
 	}
 
-	
 	buildBlockUpdate(isLastCheckGood, lastCheck, lastUpdated) {
 		const lastCheckEl = document.getElementById('last-check');
 		if (lastCheckEl) {
@@ -264,6 +264,24 @@ class App {
 			lastlastUpdatedEl.innerHTML = lastUpdated ? toDateTime.format(lastUpdated) : '--';
         }
 	}
+
+	clearAllData() {
+		if (confirm(`Очистить базу данных?`)) { //  (версия: ${window.verApp})
+			db.delete({ disableAutoOpen: false });
+
+			//localStorage.clear();
+			// Удаляем все ключи, начинающиеся с 'olnvjs_'
+			for (let key of Object.keys(localStorage)) {
+				if (key.startsWith('olnvjs_')) {
+					localStorage.removeItem(key);
+				}
+			}
+
+			caches.delete('cnt');
+			this.stateContainer = new StateContainer();
+		}
+	}
+
 }
 
 window.app = new App();
@@ -278,8 +296,11 @@ dbApp.version(1).stores({
 	settings: 'name'
 });
 
-caches.open('cnt')
-	.then(cache => window.cache = cache);
+caches.has("cnt").then(function (hasCache) {
+	openCache('cnt');
+});
+/*caches.open('cnt')
+	.then(cache => window.cache = cache);*/
 
 
 window.onclick = async function (event) {
@@ -319,10 +340,10 @@ window.onclick = async function (event) {
             }
 		}
 	}
-	/*else if (targetEl.type === "button") {
-		const olnvUpdate = targetEl.dataset.olnvUpdate;
-		if (olnvUpdate === 'check') app.myDB.fillDb();
-    }*/
+	else if (targetEl.type === "button") {
+		const clearData = targetEl.dataset.clearData;
+		if (clearData === 'true') app.clearAllData();
+    }/**/
 }
 
 window.addEventListener('popstate', async function (event) {
@@ -377,6 +398,13 @@ if (updateBtnEl) {
 		}*/
 	}
 }
+
+/*const clearAllDateEl = document.getElementById('clear-data-btn');
+if (clearAllDateEl)
+	clearAllDateEl.addEventListener('click', () => {
+		app.clearAllData();
+	});*/
+
 
 /** Сигнализирует, что пользователь активен/находится на странице */
 window.addEventListener('scroll', function () {
