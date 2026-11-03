@@ -6,7 +6,7 @@ class Views {
 		this.app = app;
 	}
 
-    async renderInfo(route, infos, path, params, isTab, prePage, lastDict, lastPoem, modelSearch, isPrintTab) {
+    async renderInfo(route, infos, path, hash, params, isTab, prePage, lastDict, lastPoem, modelSearch, isPrintTab) {
         let listDouble = [];
         const info = infos[0];
         const res = {};
@@ -20,7 +20,7 @@ class Views {
                 || info.Link === '2004/predislovie' || info.Link === '2009/predislovie'
                 || info.Link === '2005/09.09.05' || info.Link === '2005/23.09.05' || info.Link === '2005/24.09.05';
             const match = !isNoDate ? info.Link.match(/^.*\/(?<date>\d{2}-\d{2}\.\d{2}\.\d{2})$/) : undefined;
-            const dateStr = isNoDate ? '' : (match && match.groups ? match.groups.date : toShortMoscowDate.format(strToDate(info.Date)));
+            const dateStr = isNoDate ? '' : (info.Catalog === this.app.catalogs.poems && strToDate(info.Date) >= toMoscowDate(new Date(2020, 1, 1)) ? toFoolYearMoscowDate.format(strToDate(info.Date)) : (match && match.groups ? match.groups.date : toShortMoscowDate.format(strToDate(info.Date))));
             cnt += `<h1 class="page-title">${dateStr ? '<span class="date">' + dateStr + '</span> ' : ''}${title}</h1>`;
 
             for (var j in infos) {
@@ -34,7 +34,7 @@ class Views {
 
             if (info.Link !== 'index' /*&& !isTab*/) {
                 const isPrint = route.ParamView && route.ParamView.isPrint;
-                cnt += this.app.views.renderFooter(path, info, '', '.html', prePage, undefined, isPrint, isTab);
+                cnt += this.app.views.renderFooter(path, hash, info, '', '.html', prePage, undefined, isPrint, isTab);
 
             }
 
@@ -98,12 +98,12 @@ class Views {
         }
 
         if (!info.Data.NoFooter)
-            cnt += `<p class="date-footer">${(toShortMoscowDate.format(strToDate(info.Date)))}</p>`;
+            cnt += `<p class="date-footer">${info.Catalog === this.app.catalogs.poems && strToDate(info.Date) >= toMoscowDate(new Date(2020, 1, 1)) ? toFoolYearMoscowDate.format(strToDate(info.Date)) : (toShortMoscowDate.format(strToDate(info.Date)))}</p>`;
 
         return cnt;
     }
 
-    renderInfoList(route, infos, path, params) {
+    renderInfoList(route, infos, path, hash, params) {
         const res = {};
         let cnt = '';
         if (infos.length > 0) {
@@ -125,7 +125,7 @@ class Views {
                 info.Description = undefined; // чтобы не переполнять память
                 const date = strToDate(info.Date);
                 const year = date.getFullYear();
-                const groupName = '_'+(isTolk ? (info.Link === '2004/31.12.04' ? 2005 : year) : date.getMonth());
+                const groupName = '_' + (isTolk ? (info.Link === '2004/31.12.04' ? 2005 : year) : (!isTolk && (info.Link === '2009/predislovie' || info.Link === '2009/04.01.09') ? 'top' : date.getMonth()));
 
                 if (!grouped[groupName]) {
                     grouped[groupName] = [];
@@ -137,7 +137,7 @@ class Views {
 
             for (var key in grouped) {
                 const group = grouped[key];
-                const i = Number(key.slice(1));
+                const i = key === '_top' ? 0 : Number(key.slice(1));
                 if (group.length > 0) {
                     let counter = 0;
                     let iColumn = 1;
@@ -151,7 +151,7 @@ class Views {
                     const groupName = isTolk ? (`Книга ${intToRoman(numbGroup - 2000 - 3)}, ${i} год`) : (getMonthName(numbGroup) + ` ${params.year} года`);
 
                     cnt += '<div class="razdel row">';
-                    if (!isTolk || (isTolk && numbGroup !== 2004)) cnt += `<h2>${groupName}</h2>`;
+                    if ((!isTolk && key !== '_top') || (isTolk && numbGroup !== 2004)) cnt += `<h2>${groupName}</h2>`;
                     cnt += `<div class="col-lg-${numCol} col-md-${numCol} col-sm-12 col-xs-12 col-tolk">`;
 
                     for (var j in group) {
@@ -159,14 +159,18 @@ class Views {
                         const date = strToDate(info.Date);
                         const num = date.getDate();
                         const number = ('0' + num).slice(-2);
+
+                        let numb = 0;
                         for (var k in info.Titles) {
                             const itemTitle = info.Titles[k];
                             const nameEl = itemTitle.replace("<nobr>", "").replace("</nobr>", "") + (params.isPoems ? ` (от ${toShortMoscowDate.format(date)})` : '');
 
-                            const prefix = !isTolk && !params.isPoems ? (preDay === num ? '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' : number + ': ') : '';
+                            const prefix = !isTolk && !params.isPoems && key !== '_top' ? (preDay === num ? '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' : number + ': ') : '';
                             preDay = num;
 
-                            cnt += `<a href="${info.Link}.html">${prefix}${nameEl}</a><br />`;
+                            ++numb;
+
+                            cnt += `${prefix}<a href="${info.Link + (numb > 1 ? "#" + numb : "")}.html">${nameEl}</a><br />`;
 
                             counter++;
 
@@ -194,14 +198,50 @@ class Views {
 
             const prePage = curPosition - 1;
             const nextPage = curPosition + 1;
-            cnt += this.renderFooter(undefined, undefined, params.prefixPath, '.html', prePage >= firstNumber ? (prePage === firstNumber && !params.isPoems ? 'otkroveniya' : prePage) : '', nextPage <= lastNumber ? (nextPage === lastNumber ? 'year' : nextPage) : '');
+            cnt += this.renderFooter(undefined, undefined, undefined, params.prefixPath, '.html', prePage >= firstNumber ? (prePage === firstNumber && !params.isPoems ? 'otkroveniya' : prePage) : '', nextPage <= lastNumber ? (nextPage === lastNumber ? 'year' : nextPage) : '');
 
-            res.tite = title;
+            res.title = title;
         }
         res.cnt = cnt;
 
         return res;
     }
+
+    renderSettings(route, infos, path, hash, params) {
+        const title = route.Title;
+        let cnt = `<h1 id='pageTitle' class='page-title'>${title}</h1>`;
+        cnt += `
+        <ul class="settings">
+            <li>Фоновое изображение (“звёздное небо”):<input type="checkbox" onchange="OnOffStarsBg(!this.checked)" ${window.app.settings.isOffStarsBg ? '' : 'checked'} style="width: 40px;"></li>
+            <li>Url для обновления информации: <input id="set-domain" onblur="setDomain(this)" oninput="setDomainInput(this)" value="${window.app.settings.urlUpdate ? this.app.settings.urlUpdate : ''}" style="width: 320px;" title="Альтернативный URL для получения новой информации (например: https://example.com/data/exp)"></li>
+            <li>Удалить все материалы: <button data-clear-data="true" type="button" class="btn btn-danger" title="На данном компьютере, удаляет из базы данных всю ранее загруженную информацию (это может понадобиться, если необходимо заново загрузить все материалы)">Удалить</button></li>
+            <li>Версия приложения: ${window.verApp}</li>
+            <li>Режим отладки: <input type="checkbox" onchange="OnOffDebug(this.checked)" ${window.app.settings.isOnDebug ? 'checked' : ''} style="width: 40px;"></li>
+        </ul>
+        `;
+        return { title: title, cnt: cnt };
+    }
+
+
+    renderTabLayout(cnt, isPrintTab) {
+        const printLayout = `
+        <div class="tab-back-block screen-only">
+            <span class="tab-back-btn tab-back-btn-top">< назад</span>
+        </div>
+        <div class="container-fluid tab-main-block">
+            <div class="row">
+                <main>
+                    <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 col-sm-12 col-xs-12 ${!isPrintTab ? 'page-main' : 'left-print points-left'}">
+                        ${cnt}
+                    </div>
+                </main>
+            </div>
+        </div>
+        ${isPrintTab ? '<footer><div class="row"><div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 left-print print2">Страница: <span id="curLinkF"></span><br>Подготовлено к печати <span id="dateF"></span></div></div></footer>' : ''}
+                    `;
+        return printLayout;
+    }
+
 
     renderPagination(queryParams, prefixPath, suffixPath, curPosition, firstNumber, lastNumber, maxPaginSeries, prefixSeries, betweenSeries, postfixSeries, numberAsPath, typeContent, paginTpl) {
         let renderPagination = "";
@@ -264,7 +304,7 @@ class Views {
         return { cnt: cnt, prePage: prePage, nextPage: nextPage };
 	}
 
-    renderFooter(path, info, prefixPath, suffixPath, prePage, nextPage, isPrint, isTab) {
+    renderFooter(path, hash, info, prefixPath, suffixPath, prePage, nextPage, isPrint, isTab) {
 
         let cnt = `<div class="page-footer no-print">`;
         cnt += `<div class="page-navigate">`;
@@ -278,7 +318,7 @@ class Views {
 
         if (!isTab) {
             let linkNext = nextPage;
-            if (info && this.app.catalogsIsNext.includes(info.Catalog)) {
+            if (info && (this.app.catalogsIsNext.includes(info.Catalog) || info.Link === "Zapovedi")) {
                 linkNext = info.Data.Next;
                 if (!info.Data.Next) {
                     linkNext = info.Link + '-next';
@@ -286,7 +326,7 @@ class Views {
             }
             if (linkNext) {
                 cnt += `<img src="img/star.gif" height="15" hspace="10" width="15">
-                    <a href="${prefixPath}${linkNext}${suffixPath}" class="blue-link-pagination">Следующая</a>`;
+                    <a href="${prefixPath}${linkNext}${suffixPath}" class="blue-link-pagination">${info.Link === "Zapovedi" ? "Послание с Заповедями" : 'Следующая'}</a>`;
                 if (info && !info.Data.Next) {
                     cnt += '<span id="label-next" title="Следующей страницы ещё может не быть"> [*]</span><span id="spinner-next" class="bi-spinner"></span>';
                 }
@@ -302,7 +342,7 @@ class Views {
                 <a href="${'print/' + path + '.html'}" data-msu-pageprint='true' target="_blank" class="blue-link-version-print">Версия для печати</a>
             </div>
             <div class="col-xs-6 post-link">
-                <a href="${path + '.html'}" data-msu-closetab='true' class="blue-link-post">Постоянная ссылка</a>
+                <a href="${(path + '.html')+(hash ? ('#' + hash) : '')}" data-msu-closetab='true' class="blue-link-post">Постоянная ссылка</a>
             </div>
             `;
         }
@@ -310,40 +350,6 @@ class Views {
         cnt += '</div>';
 
         return cnt;
-    }
-
-    renderSettings(route, infos, path, params) {
-        const title = route.Title;
-        let cnt = `<h1 id='pageTitle' class='page-title'>${title}</h1>`;
-        cnt += `
-        <ul class="settings">
-            <li>Фоновое изображение (“звёздное небо”):<input type="checkbox" onchange="OnOffStarsBg(!this.checked)" ${window.app.settings.isOffStarsBg ? '' : 'checked'} style="width: 40px;"></li>
-            <li>Url для обновления информации: <input id="set-domain" onblur="setDomain(this)" oninput="setDomainInput(this)" value="${window.app.settings.urlUpdate ? this.app.settings.urlUpdate : ''}" style="width: 320px;" title="Альтернативный URL для получения новой информации (например: https://example.com/data/exp)"></li>
-            <li>Удалить все материалы: <button data-clear-data="true" type="button" class="btn btn-danger" title="На данном компьютере, удаляет из базы данных всю ранее загруженную информацию (это может понадобиться, если необходимо заново загрузить все материалы)">Удалить</button></li>
-            <li>Версия приложения: ${window.verApp}</li>
-            <li>Режим отладки: <input type="checkbox" onchange="OnOffDebug(this.checked)" ${window.app.settings.isOnDebug ? 'checked' : ''} style="width: 40px;"></li>
-        </ul>
-        `;
-        return { title: title, cnt: cnt };
-    }
-
-    renderTabLayout(cnt, isPrintTab) {
-        const printLayout = `
-        <div class="tab-back-block screen-only">
-            <span class="tab-back-btn tab-back-btn-top">< назад</span>
-        </div>
-        <div class="container-fluid tab-main-block">
-            <div class="row">
-                <main>
-                    <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 col-sm-12 col-xs-12 ${!isPrintTab ? 'page-main' : 'left-print points-left'}">
-                        ${cnt}
-                    </div>
-                </main>
-            </div>
-        </div>
-        ${isPrintTab ? '<footer><div class="row"><div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 left-print print2">Страница: <span id="curLinkF"></span><br>Подготовлено к печати <span id="dateF"></span></div></div></footer>' : ''}
-                    `;
-        return printLayout;
     }
 }
 

@@ -169,7 +169,7 @@ class Router {
                                     prePage = info.Link;
                                 });
 
-                            const res = await this.app.views[`render${route.View}`](route, infos, path, params, isTab, prePage, lastDict, lastPoem, modelSearch);
+                            const res = await this.app.views[`render${route.View}`](route, infos, path, hash, params, isTab, prePage, lastDict, lastPoem, modelSearch);
                             //const res = await this.renderView(path, infos, cnt, prePage, lastDict, lastPoem, route);
                             cnt = res.cnt;
                             state.title = res.title;
@@ -229,7 +229,7 @@ class Router {
 
                         let res;
                         if (route.View)
-                            res = await this.app.views[`render${route.View}`](route, infos, path, params, isTab, prePage, lastDict, lastPoem, modelSearch, isPrintTab);
+                            res = await this.app.views[`render${route.View}`](route, infos, path, hash, params, isTab, prePage, lastDict, lastPoem, modelSearch, isPrintTab);
 
                         if (res) {
                             cnt = res.cnt;
