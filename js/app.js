@@ -373,7 +373,7 @@ window.onsubmit = async function (event) {
 	const where = formEl.querySelector('#where').value;
 
 	//console.log('Форма отправлена!' + searchString);
-	const state = await app.router.navigateToPath(`search?SearchString=${searchString}&Where=${where}`);
+	const state = await app.router.navigateToPath(`search?SearchString=${searchString}&Where=${where}`, null, null, null, true);
 
 	//app.setHistory(state);
 };

@@ -123,9 +123,9 @@ class Views {
             for (var x in infos) {
                 const info = infos[x];
                 info.Description = undefined; // чтобы не переполнять память
-                const date = strToDate(info.Date);
-                const year = date.getFullYear();
-                const groupName = '_' + (isTolk ? (info.Link === '2004/31.12.04' ? 2005 : year) : (!isTolk && (info.Link === '2009/predislovie' || info.Link === '2009/04.01.09') ? 'top' : date.getMonth()));
+                const date = toMoscowDate(info.Date); // strToDate
+                const year = date.year(); // getFullYear();
+                const groupName = '_' + (isTolk ? (info.Link === '2004/31.12.04' ? 2005 : year) : (!isTolk && (info.Link === '2009/predislovie' || info.Link === '2009/04.01.09') ? 'top' : date.month()/*getMonth()*/));
 
                 if (!grouped[groupName]) {
                     grouped[groupName] = [];
@@ -326,7 +326,7 @@ class Views {
             }
             if (linkNext) {
                 cnt += `<img src="img/star.gif" height="15" hspace="10" width="15">
-                    <a href="${prefixPath}${linkNext}${suffixPath}" class="blue-link-pagination">${info.Link === "Zapovedi" ? "Послание с Заповедями" : 'Следующая'}</a>`;
+                    <a href="${prefixPath}${linkNext}${suffixPath}" class="blue-link-pagination">${info && info.Link === "Zapovedi" ? "Послание с Заповедями" : 'Следующая'}</a>`;
                 if (info && !info.Data.Next) {
                     cnt += '<span id="label-next" title="Следующей страницы ещё может не быть"> [*]</span><span id="spinner-next" class="bi-spinner"></span>';
                 }

@@ -7,7 +7,7 @@ class Search {
         this.m_PageSize = 15;
 	}
 
-    async renderSearch(query) {
+    async renderSearch(query, isFirstQuery) {
 
         const queryParams = {};
         const queryArr = query.substring(query.indexOf('?') + 1).split('&');
@@ -79,6 +79,7 @@ class Search {
             searchData.inParagraph = false;
             searchData.patternHightlight = '';
             searchData.sectionHightlight = '';
+            if (isFirstQuery) searchData.viewedList = [];
 
             // обрабатываем * в поисковой фразе
             var startWord = /*modelSearch.StartEndWord == 1 || modelSearch.StartEndWord == 2 ? "\\b" :*/ "";

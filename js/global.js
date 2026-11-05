@@ -1,8 +1,9 @@
-window.verApp = '1.0.0-beta11';
+window.verApp = '1.0.0-beta12';
 window.netOffline = undefined;
 window.moveCounter = 0; // счётчик движения мыши на странице, если =0, то пользователь не активен на странице
 window.isActiveApp; // прриложение активно/видимо на экране
 window.isOnDebug;
+moment.tz.add("Europe/Moscow|LMT MMT MMT MST MDST MSD MSK +05 EET EEST MSK|-2u.h -2u.h -2v.j -3v.j -4v.j -40 -30 -50 -20 -30 -40|01232434565756865656565656565656565698656565656565656565656565656565656565656a6|-3D8Ou.h 1sQM0 2pyW.W 1bA0 11X0 GN0 1Hb0 c4v.j ik0 3DA0 dz0 15A0 c10 2q10 iM10 23CL0 1db0 1cN0 1db0 1cN0 1db0 1dd0 1cO0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1fA0 1cM0 1cN0 IM0 rX0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1fA0 1o00 11A0 1o00 11A0 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00 11A0 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00 11A0 1o00 11A0 1qM0 WM0 8Hz0|16e6");
 
 /*window.ym?.(ID_СЧЁТЧИКА, 'params', {
     version: verApp,
@@ -122,51 +123,13 @@ function intToRoman(num) {
 
 /** Возвращаем московское время */
 function toMoscowDate(date) {
-    const timeZone = 'Europe/Moscow';
-    const options = {
-        timeZone,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        fractionalSecondDigits: 3, // Включаем миллисекунды с точностью до 3 цифр
-        hour12: false,
-    };
-    // Форматируем дату в нужном поясе
-    const parts = Intl.DateTimeFormat('en-US', options).formatToParts(date);
-
-    // Находим час и минуту в этом поясе
-    let hour = 0, minute = 0, second = 0, ms = 0;
-    for (const part of parts) {
-        if (part.type === 'hour') hour = parseInt(part.value, 10);
-        if (part.type === 'minute') minute = parseInt(part.value, 10);
-        if (part.type === 'second') second = parseInt(part.value, 10);
-        if (part.type === 'fractionalSecond') ms = parseInt(part.value, 10);
-    }
-
-    const dateMoscowZone = new Date(date);
-    dateMoscowZone.setHours(hour, minute, second, ms);
-
-    return dateMoscowZone;
-}/**/
-
-/*function toMoscowDate(date) {
-    let dateLocal;
-    if (date) dateLocal = new Date(date);
-    else dateLocal = new Date();
-    //const targetOffset = date ? Math.abs(getTimeZoneOffset(dateLocal)) : 180; // UTC+3 (но, например, для 2013 года будет UTC+4)
-    const targetOffset = getTimeZoneOffset(date);// - 180;
-    const adjustedTimestamp = dateLocal.getTime() + (dateLocal.getTimezoneOffset() * 60 * 1000) - (targetOffset * 60 * 1000);
-    const now = new Date(adjustedTimestamp); // московское время (даже если приложение выполняется не в московском времени)
-
-    return now;
-}*/
+    const dt = moment.tz(date, 'Europe/Moscow');
+    return dt;
+}
 /** Возвращаем московское время (в эту функцию всегда должно приходить московское время) */
-function strToDate(date) {
-    const dateMoscow/*dateLocal*/ = new Date(date);
-    //const dateMoscow = toMoscowDate(dateLocal);
+function strToDate(isoString) {
+    const dateMoscow = new Date(isoString);
+    //const dateMoscow = moment.tz(isoString, 'Europe/Moscow');
     return dateMoscow;
 }
 /** Форматирование даты */
@@ -207,6 +170,50 @@ function getDateFromPath(path) {
             return new Date(Number('20' + year), Number(month) - 1, Number(day));
     }
 }
+/*function toMoscowDate(date) {
+    const timeZone = 'Europe/Moscow';
+    const options = {
+        timeZone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        fractionalSecondDigits: 3, // Включаем миллисекунды с точностью до 3 цифр
+        hour12: false,
+    };
+    // Форматируем дату в нужном поясе
+    const parts = Intl.DateTimeFormat('en-US', options).formatToParts(date);
+
+    // Находим час и минуту в этом поясе
+    let hour = 0, minute = 0, second = 0, ms = 0;
+    for (const part of parts) {
+        if (part.type === 'hour') hour = parseInt(part.value, 10);
+        if (part.type === 'minute') minute = parseInt(part.value, 10);
+        if (part.type === 'second') second = parseInt(part.value, 10);
+        if (part.type === 'fractionalSecond') ms = parseInt(part.value, 10);
+    }
+
+    const dateMoscowZone = new Date(date);
+    dateMoscowZone.setHours(hour, minute, second, ms);
+
+    return dateMoscowZone;
+}
+
+function toMoscowDate(date, fromDB) {
+    let dateLocal;
+    if (date) dateLocal = new Date(date);
+    else dateLocal = new Date();
+    //const targetOffset = date ? Math.abs(getTimeZoneOffset(dateLocal)) : 180; // UTC+3 (но, например, для 2013 года будет UTC+4)
+    const targetOffset = date ? getTimeZoneOffset(date) : - 180;
+    let adjustedTimestamp;
+    if (fromDB) adjustedTimestamp = dateLocal.getTime() + (dateLocal.getTimezoneOffset() * 60 * 1000) - (targetOffset * 60 * 1000);
+    else adjustedTimestamp = dateLocal.getTime() - (dateLocal.getTimezoneOffset() * 60 * 1000) + (targetOffset * 60 * 1000);
+    const now = new Date(adjustedTimestamp); // московское время (даже если приложение выполняется не в московском времени)
+
+    return now;
+}
 function getTimeZoneOffset(date) {
     //const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const timeZone = 'Europe/Moscow';
@@ -235,7 +242,7 @@ function getTimeZoneOffset(date) {
     //const utcDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), hour, minute));
     const utcDate = new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), date.getUTCHours(), date.getUTCMinutes());
 
-    const localDateInTargetZone = new Date(utcDate/*date*/);
+    const localDateInTargetZone = new Date(utcDate);//date
     localDateInTargetZone.setHours(hour, minute, 0, 0);
 
     // Хитрость: проще всего получить смещение как разницу между «датой в целевом поясе» и UTC
@@ -244,7 +251,8 @@ function getTimeZoneOffset(date) {
     const utcTimestamp = utcDate.getTime();
     const diffMs = utcTimestamp - targetTimestamp;
     return Math.round(diffMs / (1000 * 60)); // в минутах
-}
+}*/
+
 
 function sleep(ms) {
     return new Promise(resolve => {
@@ -278,7 +286,11 @@ async function download(baseUrl, path, updateCount) {
     try {
         if (url !== undefined) {
             const response = await fetch(url, { cache: 'no-store' });
-            if (!response.ok) throw new Error(`Ошибка загрузки ${url}`);
+            if (!response.ok) {
+                //throw new Error(`Ошибка загрузки ${url}`);
+                //console.log(`Ошибка загрузки ${url}`);
+                return;
+            }
 
             const data = await response.json();
 

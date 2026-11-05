@@ -182,13 +182,16 @@ class Countdown {
 			const nowServer = await this.getServerTime();
 			const nowLocal = new Date();
 			const now = toMoscowDate(nowServer);
-			const nowDate = new Date(now);
-			nowDate.setHours(0, 0, 0, 0);
+
+			// отбрасываем время, работаем только с датой, т.е. к чистой дате прибавляем время до Посыла
+			const nowDate = now.clone().startOf('day');
+			/*const nowDate = new Date(now);
+			nowDate.setHours(0, 0, 0, 0);*/
 
 			for (let i = 0; i < countdownList.length; i++)
 			{
-				let nowDatePre = new Date(nowDate);
-				let nowDateNext = new Date(nowDate);
+				let nowDatePre = nowDate.clone();// new Date(nowDate);
+				let nowDateNext = nowDate.clone();// new Date(nowDate);
 				let iNext = i + 1;
 
 				const prevArr = countdownList[i].split(':');
@@ -200,22 +203,23 @@ class Countdown {
 				const nextArr = countdownList[iNext].split(':');
 				var next = (Number(nextArr[0]) * 60 * 60) + (Number(nextArr[1]) * 60); // в секундах с начала дня
 
+				// следующий или предыдущий Посыл можжет быть в следующем или предыдущем дне
 				if (prev > next) {
 					if ((this.getTotalSeconds(now) - prev) < 0) {
-						nowDatePre.setDate(nowDatePre.getDate() - 1); //nowDate.AddDays(-1);
+						nowDatePre.add(-1, 'day'); //.setDate(nowDatePre.getDate() - 1); //nowDate.AddDays(-1);
 					}
 					else {
-						nowDateNext.setDate(nowDateNext.getDate() + 1); //nowDate.AddDays(1);
+						nowDateNext.add(1, 'day'); //.setDate(nowDateNext.getDate() + 1); //nowDate.AddDays(1);
 					}
 				}
 
-				const datePrev = new Date(nowDatePre);
-				datePrev.setSeconds(prev);// nowDatePre.Add(prev);
-				const dateNext = new Date(nowDateNext);
-				dateNext.setSeconds(next);// nowDateNext.Add(next);
-				if (now > datePrev && now < dateNext) // выбираем ближайшую большую сигнальную точку
+				const datePrev = nowDatePre.clone().add(prev, 'second'); //new Date(nowDatePre);
+				//datePrev.setSeconds(prev);// nowDatePre.Add(prev);
+				const dateNext = nowDateNext.clone().add(next, 'second'); //new Date(nowDateNext);
+				//dateNext.setSeconds(next);// nowDateNext.Add(next);
+				if (now > datePrev && now < dateNext) // выбираем ближайшую большую сигнальную точку (время Посыла)
 				{
-					return { pointPrev: Math.floor(datePrev.getTime() / 1000), pointNext: Math.floor(dateNext.getTime() / 1000), nowMoscow: now, nowLocal: nowLocal, nowServer: nowServer };
+					return { pointPrev: Math.floor(datePrev.unix()/*getTime() / 1000*/), pointNext: Math.floor(dateNext.unix()), nowMoscow: now, nowLocal: nowLocal, nowServer: nowServer };
 				}
 			}
 		}
@@ -242,6 +246,6 @@ class Countdown {
 	 * @returns
 	 */
 	getTotalSeconds(date) {
-		return date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds();
+		return date.diff(date.clone().startOf('day'), 'seconds'); //date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds();
 	}
 }

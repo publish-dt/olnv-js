@@ -44,15 +44,25 @@ class Cld {
             this.curCldYear = year;
 
             try {
-
-                const dateEnd = toMoscowDate(new Date(year, month, 1));
-                const dateStart = toMoscowDate(new Date(dateEnd));
-                dateEnd.setMonth(dateEnd.getMonth() + 1);
+                //const dateBase = new Date(year, month, 1);
+                /*const dateStart = DateTime.fromObject({ year, month, day }, { zone: 'Europe/Moscow' });
+                const dateEnd = dateStart.plus({ months: 1 });*/
+                const dateStart = moment.tz([year, month, 1, 0, 0, 0], 'Europe/Moscow');
+                const dateEnd = dateStart.clone().add(1, 'month');
+                /*const dateEnd = toMoscowDate(dateBase);
+                const dateStart = (new Date(dateEnd)); // toMoscowDate
+                dateEnd.setMonth(dateEnd.getMonth() + 1);*/
 
                 const infos = await db['infos']
                     .where('Catalog')
                     .anyOf([this.app.catalogs.dict, this.app.catalogs.tolk, this.app.catalogs.poems])
-                    .and((info) => strToDate(info.Date) >= dateStart && strToDate(info.Date) < dateEnd)
+                    .and((info) => {
+                        //const a = strToDate(info.Date) >= dateStart && strToDate(info.Date) < dateEnd;
+                        //const date = DateTime.fromISO(info.Date, { zone: 'Europe/Moscow' });
+                        const date = toMoscowDate(info.Date);
+                        const a = date >= dateStart && date < dateEnd;
+                        return a;
+                    })
                     .sortBy('Date'); // надо обязательно сортировать по дате, чтобы Послания были в приоритете
                     /*.equals(this.app.catalogs.poems)
                     .orderBy('Date') // orderBy после фильтрации не может идти. filter может только после orderBy идти
@@ -75,7 +85,10 @@ class Cld {
                     const info = infos[i];
                     info.Description = undefined; // чтобы не переполнять память
 
-                    const groupName = formatDateCld(strToDate(info.Date));
+                    //const groupName = formatDateCld(toMoscowDateFromLocal(strToDate(info.Date)));
+                    /*const dt = DateTime.fromISO(info.Date, { zone: 'Europe/Moscow' });
+                    const groupName = dt.setLocale('ru').toFormat('yyyy/MM/dd');*/
+                    const groupName = toMoscowDate(info.Date).format('yyyy/MM/DD');
 
                     if (!grouped[groupName]) {
                         grouped[groupName] = [];
@@ -125,7 +138,7 @@ class Cld {
         const year = date.getFullYear();
 
         const yearExist = false;
-        if (year >= this.minCldYear && year <= toMoscowDate().getFullYear()) { // проверяем, можно ли стрелками месяца перейти к след./пред. году, поскольку список годов ограничен
+        if (year >= this.minCldYear && year <= toMoscowDate().year()/*getFullYear()*/) { // проверяем, можно ли стрелками месяца перейти к след./пред. году, поскольку список годов ограничен
             await this.changeCalendar(month + 1, year);
         }
     }

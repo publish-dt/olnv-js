@@ -7,7 +7,7 @@ class Router {
         this.cssLinkPrintLayout;
     }
 
-    async navigateToPath(path, firstLoad, targetEl, isUpdate) {
+    async navigateToPath(path, firstLoad, targetEl, isUpdate, isSubmit) {
 
         let count = 0;
         let cnt = '';
@@ -95,7 +95,7 @@ class Router {
                 }
                 // Это страница поиска
                 else if (path.startsWith('search?')) {
-                    const res = await this.app.search.renderSearch(path);
+                    const res = await this.app.search.renderSearch(path, firstLoad || isSubmit);
                     if (res) {
                         cnt = res.cnt;
                         documentTitle = res.title;
@@ -297,7 +297,7 @@ class Router {
                 // Помечаем заголовок элемента в результате поиска, как просмотренный
                 if (modelSearch && Object.keys(modelSearch).length > 0) {
                     let titleEl = targetEl;
-                    if (targetEl.firstChild.nodeName !== "#text") titleEl = targetEl.firstChild;
+                    if (targetEl.firstElementChild && targetEl.firstElementChild.nodeName !== "#text") titleEl = targetEl.firstElementChild;
                     titleEl.setAttribute('style', 'color: peru !important;');
                     const value = path + (hash ? `#${hash}` : '');
                     if (Array.isArray(modelSearch.viewedList)) {
