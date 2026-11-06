@@ -345,7 +345,12 @@ class Router {
         if ((settings !== undefined || !this.app.stateContainer.updateInfo.updateStarted) && !isTab) {
             mainContEl.innerHTML = cnt;
 
+            if (window.menuEl && window.menuEl.classList.contains('in') === true)
+                window.menuEl.classList.toggle("in");
+
             if (isCloseTab) this.hideOverlayTab();
+
+            tooltipstering();
 
             // Для календаря получаем дату из path
             const datePath = getDateFromPath(path);

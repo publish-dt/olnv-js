@@ -1,4 +1,4 @@
-window.verApp = '1.0.0-beta12';
+window.verApp = '1.0.0-beta13';
 window.netOffline = undefined;
 window.moveCounter = 0; // счётчик движения мыши на странице, если =0, то пользователь не активен на странице
 window.isActiveApp; // прриложение активно/видимо на экране
@@ -388,6 +388,58 @@ function OnOffDebug(isOn) {
     localStorage.setItem('olnvjs_isOnDebug', isOn);
 }
 
+window.toggleMenuBtnEl = document.querySelector('.navbar-toggle');
+if (window.toggleMenuBtnEl) {
+    window.menuEl = document.getElementById("bs-navbar");
+    window.toggleMenuBtnEl.addEventListener('click', function () {
+        window.menuEl.classList.toggle("in");
+    });
+}
+
+// нумерация четверостиший Катренов
+isotip.init({
+    placement: 'left',     // позиция по умолчанию
+    html: false,          // true — всегда воспринимать содержимое как HTML
+    tooltipOffset: 10,    // отступ от элемента
+    removalDelay: 0,     // задержка перед удалением подсказки из DOM
+    windowPadding: { // window bounds for tooltip repositioning
+        top: -50,
+    }
+});
+function tooltipstering(isPrint) {
+    if (isPrint === undefined) isPrint = false;
+
+    let counterNumbPoem = 1;
+    const pageMain = document.getElementsByClassName('poem-blok');
+    if (pageMain) {
+        if (pageMain.length > 0) {
+            const pageMainEl = pageMain[0];
+            let elements = pageMainEl.children;
+            for (let i = 0; i < elements.length; i++) {
+                const element = elements[i]
+                if (element == null) continue
+
+                if (element.className.toLowerCase() === "page-title" || element.className.toLowerCase() === "next") counterNumbPoem = 1;
+                if (element.classList.contains("poem")) {
+                    if (!isPrint) {
+                        element.classList.add('tooltip-hover');
+                        /*element.classList.add('hint--left');
+                        element.classList.add('hint--no-arrow');
+                        element.classList.add('hint--no-animate');*/
+                    }
+
+                    element.setAttribute('data-tooltip-content', counterNumbPoem);
+
+                    /*const idName = "poem-tooltip-" + counterNumbPoem;
+                    element.setAttribute('id', idName);
+                    element.setAttribute('data-tooltip-container', "#"+idName);*/
+
+                    counterNumbPoem++;
+                }
+            }
+        }
+    }
+}
 
 const footerYearEl = document.getElementById('footer-year');
 footerYearEl.innerHTML = (new Date()).getFullYear();
