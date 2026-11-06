@@ -37,7 +37,7 @@ body {
 
 .left-print {
 	/*margin-left: 59pt;*/ /* пустое поле слева */
-	/*padding-left: 25pt;*/ /*было 15pt*/
+	padding-left: 25pt; /*было 15pt*/
 	padding-bottom: 24pt;
 }
 /*прерывистая граница слева + внутренние отступы до текста*/
@@ -183,8 +183,9 @@ P.poem {
 }
 
 /*Дата Послания*/
-.date{
+.date {
 	margin-right: 5pt;
+	color: rgb(0, 0, 0) !important;
 }
 
 .color-white {
@@ -230,9 +231,10 @@ P.poem {
 
 /* нумерация четверостиший */
 .poem::before {
-	content: attr(aria-label);
+	content: attr(data-tooltip-content);
 	position: absolute;
-	left: 8px;
+	margin-left: -30px;
+	/*left: 8px;*/
 	opacity: 0.3;
 }
 

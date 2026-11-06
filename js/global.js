@@ -1,4 +1,4 @@
-window.verApp = '1.0.0-beta13';
+window.verApp = '1.0.0-beta14';
 window.netOffline = undefined;
 window.moveCounter = 0; // счётчик движения мыши на странице, если =0, то пользователь не активен на странице
 window.isActiveApp; // прриложение активно/видимо на экране
@@ -387,6 +387,12 @@ function OnOffDebug(isOn) {
     window.app.settings.isOnDebug = isOn;
     localStorage.setItem('olnvjs_isOnDebug', isOn);
 }
+/** вкл/откл. нумерацию стихов при печати */
+function OnOffNumByPrint(isOn) {
+    window.isNumByPrint = isOn;
+    window.app.settings.isNumByPrint = isOn;
+    localStorage.setItem('olnvjs_isNumByPrint', isOn);
+}
 
 window.toggleMenuBtnEl = document.querySelector('.navbar-toggle');
 if (window.toggleMenuBtnEl) {
@@ -397,15 +403,14 @@ if (window.toggleMenuBtnEl) {
 }
 
 // нумерация четверостиший Катренов
-isotip.init({
+var configIsotip = {
     placement: 'left',     // позиция по умолчанию
     html: false,          // true — всегда воспринимать содержимое как HTML
     tooltipOffset: 10,    // отступ от элемента
     removalDelay: 0,     // задержка перед удалением подсказки из DOM
-    windowPadding: { // window bounds for tooltip repositioning
-        top: -50,
-    }
-});
+    //container: 'p.poem',
+};
+isotip.init(configIsotip);
 function tooltipstering(isPrint) {
     if (isPrint === undefined) isPrint = false;
 
@@ -423,16 +428,9 @@ function tooltipstering(isPrint) {
                 if (element.classList.contains("poem")) {
                     if (!isPrint) {
                         element.classList.add('tooltip-hover');
-                        /*element.classList.add('hint--left');
-                        element.classList.add('hint--no-arrow');
-                        element.classList.add('hint--no-animate');*/
                     }
 
-                    element.setAttribute('data-tooltip-content', counterNumbPoem);
-
-                    /*const idName = "poem-tooltip-" + counterNumbPoem;
-                    element.setAttribute('id', idName);
-                    element.setAttribute('data-tooltip-container', "#"+idName);*/
+                    if (!isPrint || (isPrint && isNumByPrint)) element.setAttribute('data-tooltip-content', counterNumbPoem);
 
                     counterNumbPoem++;
                 }
@@ -443,5 +441,11 @@ function tooltipstering(isPrint) {
 
 const footerYearEl = document.getElementById('footer-year');
 footerYearEl.innerHTML = (new Date()).getFullYear();
+
+function pad(n, len) {
+    n = String(n);
+    while (n.length < len) n = '0' + n;
+    return n;
+}
 
 const months = ["январь", "февраль", "март", "апрель", "май", "июнь", "июль", "август", "сентябрь", "октябрь", "ноябрь", "декабрь"];

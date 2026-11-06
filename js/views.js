@@ -215,6 +215,7 @@ class Views {
             <li>Фоновое изображение (“звёздное небо”):<input type="checkbox" onchange="OnOffStarsBg(!this.checked)" ${window.app.settings.isOffStarsBg ? '' : 'checked'} style="width: 40px;"></li>
             <li>Url для обновления информации: <input id="set-domain" onblur="setDomain(this)" oninput="setDomainInput(this)" value="${window.app.settings.urlUpdate ? this.app.settings.urlUpdate : ''}" style="width: 320px;" title="Альтернативный URL для получения новой информации (например: https://example.com/data/exp)"></li>
             <li>Удалить все материалы: <button data-clear-data="true" type="button" class="btn btn-danger" title="На данном компьютере, удаляет из базы данных всю ранее загруженную информацию (это может понадобиться, если необходимо заново загрузить все материалы)">Удалить</button></li>
+            <li>Нумерация стихов при печати: <input type="checkbox" onchange="OnOffNumByPrint(this.checked)" ${window.app.settings.isNumByPrint ? 'checked' : ''} style="width: 40px;"></li>
             <li>Версия приложения: ${window.verApp}</li>
             <li>Режим отладки: <input type="checkbox" onchange="OnOffDebug(this.checked)" ${window.app.settings.isOnDebug ? 'checked' : ''} style="width: 40px;"></li>
         </ul>

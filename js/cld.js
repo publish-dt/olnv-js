@@ -44,17 +44,14 @@ class Cld {
             this.curCldYear = year;
 
             try {
-                //const dateBase = new Date(year, month, 1);
-                /*const dateStart = DateTime.fromObject({ year, month, day }, { zone: 'Europe/Moscow' });
-                const dateEnd = dateStart.plus({ months: 1 });*/
                 const dateStart = moment.tz([year, month, 1, 0, 0, 0], 'Europe/Moscow');
                 const dateEnd = dateStart.clone().add(1, 'month');
-                /*const dateEnd = toMoscowDate(dateBase);
-                const dateStart = (new Date(dateEnd)); // toMoscowDate
-                dateEnd.setMonth(dateEnd.getMonth() + 1);*/
+                const dateFilter = `${year}-${pad(month + 1, 2)}-`
 
                 const infos = await db['infos']
-                    .where('Catalog')
+                    .where('Date')
+                    .startsWith(dateFilter)
+                    /*.where('Catalog')
                     .anyOf([this.app.catalogs.dict, this.app.catalogs.tolk, this.app.catalogs.poems])
                     .and((info) => {
                         //const a = strToDate(info.Date) >= dateStart && strToDate(info.Date) < dateEnd;
@@ -62,7 +59,7 @@ class Cld {
                         const date = toMoscowDate(info.Date);
                         const a = date >= dateStart && date < dateEnd;
                         return a;
-                    })
+                    })*/
                     .sortBy('Date'); // надо обязательно сортировать по дате, чтобы Послания были в приоритете
                     /*.equals(this.app.catalogs.poems)
                     .orderBy('Date') // orderBy после фильтрации не может идти. filter может только после orderBy идти
@@ -79,10 +76,12 @@ class Cld {
                         console.error(err);
                     });*/
 
+                const inCatalogs = [this.app.catalogs.dict, this.app.catalogs.tolk, this.app.catalogs.poems];
                 /** Группируем по дате, т.к. может быть несколько разных типов материалов в одной дате (Послания, Катрены, спец. даты) */
                 const grouped = [];
                 for (var i in infos) {
                     const info = infos[i];
+                    if (!inCatalogs.includes(info.Catalog)) continue;
                     info.Description = undefined; // чтобы не переполнять память
 
                     //const groupName = formatDateCld(toMoscowDateFromLocal(strToDate(info.Date)));
@@ -105,7 +104,7 @@ class Cld {
                         const title = this.app.specDate[key];
                         const data = {
                             Date: key,
-                            Type: (group.some(info => info.Data && info.Data.PoemOutDict) ? 'poemOutDict' : (infoMess ? 'dict' : 'poem')) + (title ? ' title' : ''),
+                            Type: (group.some(info => info.Data && info.Data.PoemOutDict) ? 'poemOutDict' : (infoMess ? 'dict' : 'poemDay')) + (title ? ' title' : ''),
                             Link: (infoMess ? infoMess.Link : (infoPoem ? infoPoem.Link : 'notLinkCld')) + '.html',
                             Title: title ? title : null
                         };

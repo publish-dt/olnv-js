@@ -1669,20 +1669,22 @@ SPAN.c2, SPAN.c3, SPAN.c4, SPAN.c5 {
 
 
 /* нумерация четверостиший Катренов */
-.poem:before {
-	visibility: var(--visibility, hidden);
+.tooltip {
+	opacity: 1;
 }
+/*.poem:before {
+	visibility: var(--visibility, hidden);
+}*/
 
-/* IE11 */
+/* IE11 
 *::-ms-backdrop, .poem:before {
 	visibility: hidden;
 }
-
 .poem::before {
 	left: 8px;
 	margin-top: -19px;
 	font-size: medium;
-}
+}*/
 
 #label-next {
 	display: inline-block;

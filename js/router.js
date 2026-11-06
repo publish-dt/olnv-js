@@ -201,7 +201,7 @@ class Router {
                             if (!isLastYear && route.ParamView && route.ParamView.sortAsc || (isLastYear && route.Catalogs.includes(this.app.catalogs.tolk))) coll = coll;
                             else coll = coll.desc(); // сортировка по убыванию
                             /** отбираем материалы за год */
-                            if (route.ParamView && route.ParamView.filter === 'year') {
+                            if (route.ParamView && route.ParamView.filter === 'year' && route.Catalogs) {
                                 const isPoems = route.Catalogs.includes(this.app.catalogs.poems) ? true : (route.Catalogs.some(el => [this.app.catalogs.dict, this.app.catalogs.tolk].includes(el)) ? false : undefined);
                                 params.isPoems = isPoems;
                                 params.lastYear = strToDate((isPoems ? infoLastPoems.Date : infoLastDict.Date)).getFullYear();
@@ -284,10 +284,11 @@ class Router {
 
                 this.app.stateContainer.tabLayout.nowIsTab = true;
 
-                const tabLayout = this.app.views.renderTabLayout(cnt, isPrintTab);
+                const cntTab = this.app.views.renderTabLayout(cnt, isPrintTab);
+
                 const overlayTabEl = document.getElementById('overlay-tab');
                 overlayTabEl.style.display = 'block';
-                overlayTabEl.innerHTML = tabLayout;
+                overlayTabEl.innerHTML = cntTab;
 
                 this.onLoadTab(path, hash, app, isPrintTab);
 
@@ -350,8 +351,6 @@ class Router {
 
             if (isCloseTab) this.hideOverlayTab();
 
-            tooltipstering();
-
             // Для календаря получаем дату из path
             const datePath = getDateFromPath(path);
             let monthCld;
@@ -362,6 +361,8 @@ class Router {
             }
             this.app.cld.getDataCalendar(yearCld, monthCld, isUpdate);
         }
+
+        if (cntIsSet) tooltipstering(isPrintTab);
 
         state.path = path;
         state.hash = hash;

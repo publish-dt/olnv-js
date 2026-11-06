@@ -175,6 +175,14 @@ class App {
 				OnOffDebug(isOnDebug);
             }
 
+			let isNumByPrint = localStorage.getItem('olnvjs_isNumByPrint');
+			if (isNumByPrint) {
+				isNumByPrint = JSON.parse(isNumByPrint);
+				window.isNumByPrint = isNumByPrint;
+				this.settings.isNumByPrint = isNumByPrint;
+				OnOffNumByPrint(isNumByPrint);
+            }
+
 			/** Заполняем блок Обновления */
 			const isLastCheckGood = JSON.parse(localStorage.getItem('olnvjs_isLastCheckGood'));
 
