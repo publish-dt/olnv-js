@@ -741,7 +741,8 @@ td{
 .page-main {
 	font-size: 20px;
 	line-height: 22px;
-    margin-bottom: 60px;
+	padding-left: 20px;
+	margin-bottom: 60px;
 	text-align: justify; /*Текст по ширине страницы*/
 }
 
@@ -774,6 +775,9 @@ td{
 /*Абзацный отступ у первой строки*/
 .page-main p{
 	text-indent: 25px; /* Отступ первой строки в пикселах */
+}
+.page-main .poem p {
+	text-indent: 0; /* Убираем отступ первой строки у Катренов */
 }
 /*Подпись под Посланием, стиль абзацев в Новостях*/
 p.c0 {

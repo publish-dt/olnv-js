@@ -13,8 +13,8 @@ class App {
 
 		this.configApp = {
 			minYear: 2004,
-			// 'https://cors-anywhere.herokuapp.com/https://otk-data.web.app'  https://publish-dt.github.io/otk-data/exp
-			urlUpdate: 'https://otk-data.website.yandexcloud.net', // 'https://otk-data.pages.dev', // 'data', // 
+			// 'https://cors-anywhere.herokuapp.com/https://otk-data.web.app'  https://otk-data.website.yandexcloud.net 
+			urlUpdate: 'https://publish-dt.github.io/otk-data/exp', // 'https://otk-data.pages.dev', // 'data', // 
 			domainDNS: '_dnslink.dvizhenietvorca.ru',
 			countdown: [/*"0:37",*/ "03:00", "11:00", "19:00"], // список времени обратного отсчёта до Посыла (результат отображается на сайте в секции "Обратный отсчёт")
 		};

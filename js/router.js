@@ -362,7 +362,11 @@ class Router {
             this.app.cld.getDataCalendar(yearCld, monthCld, isUpdate);
         }
 
-        if (cntIsSet) tooltipstering(isPrintTab);
+        if (cntIsSet) {
+            console.log('Referer: ' + document.referrer);
+            ym(114149527, 'hit', '/' + path, { params: paramsYm, referer: window.document.referrer });
+            tooltipstering(isPrintTab);
+        }
 
         state.path = path;
         state.hash = hash;

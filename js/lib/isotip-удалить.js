@@ -380,7 +380,7 @@ window.isotip = { // DT
                     tooltip.parentNode.removeChild(tooltip)
                 }
             }
-        }, 3500);
+        }, 500);
         listTimeoutID.push([tooltip, timeoutID]);
     }
     // DT-

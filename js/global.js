@@ -1,14 +1,21 @@
-window.verApp = '1.0.0-beta14';
+window.verApp = '1.0.0-beta15';
 window.netOffline = undefined;
 window.moveCounter = 0; // счётчик движения мыши на странице, если =0, то пользователь не активен на странице
 window.isActiveApp; // прриложение активно/видимо на экране
 window.isOnDebug;
 moment.tz.add("Europe/Moscow|LMT MMT MMT MST MDST MSD MSK +05 EET EEST MSK|-2u.h -2u.h -2v.j -3v.j -4v.j -40 -30 -50 -20 -30 -40|01232434565756865656565656565656565698656565656565656565656565656565656565656a6|-3D8Ou.h 1sQM0 2pyW.W 1bA0 11X0 GN0 1Hb0 c4v.j ik0 3DA0 dz0 15A0 c10 2q10 iM10 23CL0 1db0 1cN0 1db0 1cN0 1db0 1dd0 1cO0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1fA0 1cM0 1cN0 IM0 rX0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1fA0 1o00 11A0 1o00 11A0 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00 11A0 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00 11A0 1o00 11A0 1qM0 WM0 8Hz0|16e6");
 
+// https://metrika.yandex.ru/support/metrica/ru/data/visit-params-data
 /*window.ym?.(ID_СЧЁТЧИКА, 'params', {
-    version: verApp,
+    version: verApp, // версию приложения надо передавать, чтобы понимать, не работают ли пользователи с очень старой версией
     //mode: mode,
 });*/
+const paramsYm = {
+    typeApp: 'spa', // тип приложения: spa, wpf, ext - расширение браузера
+    version: verApp, // версию приложения надо передавать, чтобы понимать, не работают ли пользователи с очень старой версией
+};
+
+console.log('Referer: ' + document.referrer);
 
 window.onerror = function (message, url, line, col, error) {
     if (window.isOnDebug)
@@ -406,9 +413,12 @@ if (window.toggleMenuBtnEl) {
 var configIsotip = {
     placement: 'left',     // позиция по умолчанию
     html: false,          // true — всегда воспринимать содержимое как HTML
-    tooltipOffset: 10,    // отступ от элемента
+    tooltipOffset: 4,    // отступ от элемента
     removalDelay: 0,     // задержка перед удалением подсказки из DOM
     //container: 'p.poem',
+    windowPadding: { // window bounds for tooltip repositioning
+        left: 0
+    }
 };
 isotip.init(configIsotip);
 function tooltipstering(isPrint) {
@@ -427,7 +437,7 @@ function tooltipstering(isPrint) {
                 if (element.className.toLowerCase() === "page-title" || element.className.toLowerCase() === "next") counterNumbPoem = 1;
                 if (element.classList.contains("poem")) {
                     if (!isPrint) {
-                        element.classList.add('tooltip-hover');
+                        element.classList.add('tooltip-click'); // hover
                     }
 
                     if (!isPrint || (isPrint && isNumByPrint)) element.setAttribute('data-tooltip-content', counterNumbPoem);
