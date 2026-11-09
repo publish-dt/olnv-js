@@ -1,4 +1,4 @@
-window.verApp = '1.0.0-beta15';
+window.verApp = '1.0.0-beta16';
 window.netOffline = undefined;
 window.moveCounter = 0; // счётчик движения мыши на странице, если =0, то пользователь не активен на странице
 window.isActiveApp; // прриложение активно/видимо на экране
@@ -10,12 +10,12 @@ moment.tz.add("Europe/Moscow|LMT MMT MMT MST MDST MSD MSK +05 EET EEST MSK|-2u.h
     version: verApp, // версию приложения надо передавать, чтобы понимать, не работают ли пользователи с очень старой версией
     //mode: mode,
 });*/
+const counterYm = 114149527;
+typeApp = typeof typeApp !== 'undefined' ? typeApp : 'null';
 const paramsYm = {
-    typeApp: 'spa', // тип приложения: spa, wpf, ext - расширение браузера
+    "type-app": typeApp, // тип приложения: spa, wpf, ext - расширение браузера
     version: verApp, // версию приложения надо передавать, чтобы понимать, не работают ли пользователи с очень старой версией
 };
-
-console.log('Referer: ' + document.referrer);
 
 window.onerror = function (message, url, line, col, error) {
     if (window.isOnDebug)
@@ -399,6 +399,12 @@ function OnOffNumByPrint(isOn) {
     window.isNumByPrint = isOn;
     window.app.settings.isNumByPrint = isOn;
     localStorage.setItem('olnvjs_isNumByPrint', isOn);
+}
+/** вкл/откл. диалог оповещения пользователя */
+function OnOffAlert(isOn) {
+    window.isAlert = isOn;
+    window.app.settings.isAlert = isOn;
+    localStorage.setItem('olnvjs_isAlert', isOn);
 }
 
 window.toggleMenuBtnEl = document.querySelector('.navbar-toggle');

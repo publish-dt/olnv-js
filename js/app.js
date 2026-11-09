@@ -183,6 +183,14 @@ class App {
 				OnOffNumByPrint(isNumByPrint);
             }
 
+			let isAlert = localStorage.getItem('olnvjs_isAlert');
+			if (isAlert) {
+				isAlert = JSON.parse(isAlert);
+				window.isAlert = isAlert;
+				this.settings.isAlert = isAlert;
+				OnOffNumByPrint(isAlert);
+            }
+
 			/** Заполняем блок Обновления */
 			const isLastCheckGood = JSON.parse(localStorage.getItem('olnvjs_isLastCheckGood'));
 

@@ -44,7 +44,7 @@ class DB {
 
 			if (Object.keys(res).length > 0) {
 				if (!noNavigate && (res.numberNewData > 0 || res.numberChangeData > 0)) {
-					alert(`Загружено: ${res.numberNewData} новых материалов и ${res.numberChangeData} изменённых материалов`);
+					if (this.app.settings.isAlert) alert(`Загружено: ${res.numberNewData} новых материалов и ${res.numberChangeData} изменённых материалов`);
 					isUpdated = true;
 				}
 
@@ -54,7 +54,7 @@ class DB {
 			}
 		}
 		else {
-			if (netOffline) alert('Нет подключения к интернету!');
+			if (netOffline && this.app.settings.isAlert) alert('Нет подключения к интернету!');
 			else {
 				//alert('Не удалось загрузить данные из otk-data');
 				isLastCheckGood = false;

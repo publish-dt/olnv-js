@@ -216,7 +216,9 @@ class Views {
             <li>Url для обновления информации: <input id="set-domain" onblur="setDomain(this)" oninput="setDomainInput(this)" value="${window.app.settings.urlUpdate ? this.app.settings.urlUpdate : ''}" style="width: 320px;" title="Альтернативный URL для получения новой информации (например: https://example.com/data/exp)"></li>
             <li>Удалить все материалы: <button data-clear-data="true" type="button" class="btn btn-danger" title="На данном компьютере, удаляет из базы данных всю ранее загруженную информацию (это может понадобиться, если необходимо заново загрузить все материалы)">Удалить</button></li>
             <li>Нумерация стихов при печати: <input type="checkbox" onchange="OnOffNumByPrint(this.checked)" ${window.app.settings.isNumByPrint ? 'checked' : ''} style="width: 40px;"></li>
+            <li>Показывать диалог оповещений: <input type="checkbox" onchange="OnOffAlert(this.checked)" ${window.app.settings.isAlert ? 'checked' : ''} style="width: 40px;" title="Например, показывать количество загруженных материалов при проверке обновлений"></li>
             <li>Версия приложения: ${window.verApp}</li>
+            <li>О программе: Данная программа является автономным приложением для изучения Знаний Создателя. Автономное - это значит оно может работать без подключения к интернету. Это особенно полезно, когда из-за высокой нагрузки (или других причин) на сайты Знаний Создателя, они могут быть недоступны, а данное приложение будет работать независимо от наличия интернета или работоспособности серверов.</li>
             <li>Режим отладки: <input type="checkbox" onchange="OnOffDebug(this.checked)" ${window.app.settings.isOnDebug ? 'checked' : ''} style="width: 40px;"></li>
         </ul>
         `;

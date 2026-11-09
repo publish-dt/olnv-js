@@ -363,8 +363,8 @@ class Router {
         }
 
         if (cntIsSet) {
-            console.log('Referer: ' + document.referrer);
-            ym(114149527, 'hit', '/' + path, { params: paramsYm, referer: window.document.referrer });
+            //console.log('Referer: ' + document.referrer);
+            ym(counterYm, 'hit', path, { params: paramsYm }); // , referer: window.document.referrer
             tooltipstering(isPrintTab);
         }
 
