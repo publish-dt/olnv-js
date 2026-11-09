@@ -1,0 +1,1 @@
+let typeApp = 'spa-dev';
