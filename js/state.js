@@ -12,5 +12,6 @@ class StateContainer {
         this.tabLayout = {};
         this.lastTolk;
         this.lastPoem;
+        this.lastRead = {};
     }
 }

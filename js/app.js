@@ -149,6 +149,8 @@ class App {
 		try {
 			this.basePath = this.getPath(document.baseURI, true);
 
+
+			/** Читаем настройки приложения */
 			const urlUpdate = localStorage.getItem('olnvjs_urlUpdate');
 			if (urlUpdate) {
 				this.urlUpdate = urlUpdate;
@@ -190,6 +192,11 @@ class App {
 				this.settings.isAlert = isAlert;
 				OnOffNumByPrint(isAlert);
             }
+
+
+			const lastRead = localStorage.getItem('olnvjs_lastRead');
+			if (lastRead)
+				this.stateContainer.lastRead = JSON.parse(lastRead);
 
 			/** Заполняем блок Обновления */
 			const isLastCheckGood = JSON.parse(localStorage.getItem('olnvjs_isLastCheckGood'));

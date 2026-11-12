@@ -115,15 +115,17 @@ class DB {
 						let numberNewData = 0;
 						let numberChangeData = 0;
 						let jsonString = undefined;
-						//const toDelete = [];
 						const arrData = file.content.split('\n');
-						const totalCount = arrData.length;
-						let percent = 0;
+						/*const totalCount = arrData.length;
+						let percent = 0;*/
+						const bulkPut = [];
+						const bulkDelete = [];
+						//const startTime = new Date();
 						for (var i in arrData) {
-							if (i % 100 === 0) {
+							/*if (i % 100 === 0) {
 								percent = i * 100 / totalCount;
 								percentUpdatedEl.innerHTML = ` - ${Math.trunc(percent)}%`;
-							}
+							}*/
 							try {
 								jsonString = arrData[i];
 								if (jsonString !== "") {
@@ -132,7 +134,14 @@ class DB {
 									const dateChange = strToDate(obj.DateChange);
 									const date = strToDate(obj.Date);
 									if (obj.Active === true && (dateChange > lastDateChangeStore || (lastPoemStore && obj.Id === lastPoemStore.Id) || (lastTolkStore && obj.Id === lastTolkStore.Id))) { // это новый/изменённый материал или последний Катрен/Послание, это нужно, чтобы старые и не изменённые материалы не пересохранять в БД
-										let isFound = false;
+										bulkPut.push(obj); // этот способ в 25 раз быстрее, чем db.infos.add(obj)
+
+										/* этот способ в 2 раза быстрее, чем db.infos.add(obj)
+										const resKey = await db.infos.put(obj);
+										if (serviceData && serviceData.LastDateChange) console.log('Новый материал: ' + resKey);
+										numberNewData++;*/
+
+										/*let isFound = false;
 										await db.infos.where("Id").equalsIgnoreCase(obj.Id).modify((value, ref) => { // изменяем существующую запись в БД
 											ref.value = obj;
 											isFound = true;
@@ -148,7 +157,22 @@ class DB {
 											await db.infos.add(obj);
 											if (serviceData && serviceData.LastDateChange) console.log('Новый материал: ' + obj.Link);
 											numberNewData++;
+										}*/
+
+										// эта проверка, почти в два раза (~1.6) увеличивает время загрузки
+										if (serviceData && serviceData.LastDateChange) {
+											const isFound = await db.infos.where("Id").equalsIgnoreCase(obj.Id).first();
+											if (isFound) { // это изменённый материал
+												if (lastPoemStore && obj.Id !== lastPoemStore.Id && lastTolkStore && obj.Id !== lastTolkStore.Id) { // Последний Катрен/Послание не должен учитываться в списке изменённых материалов, т.к. в нём меняется только Data.Next
+													console.log(`Изменённый материал: ${obj.Link}`);
+													numberChangeData++;
+                                                }
+											}
+											else // это новый материал
+												numberNewData++;
 										}
+										else
+											numberNewData++;
 
 										// обновляем кэш данных последнего Катрена/Послания
 										if (obj.Catalog === app.catalogs.poems && (!lastPoem || obj.Date > lastPoem.Date || obj.Id === lastPoem.Id)) {
@@ -163,17 +187,29 @@ class DB {
 										counter++;
 									}
 									else if (serviceData && serviceData.LastDateChange && obj.Active === false && dateChange > lastDateChangeStore) {
-										//toDelete.push(obj.Id);
-										await db.infos.delete(obj.Id);
+										bulkDelete.push(obj.Id);
+										//await db.infos.delete(obj.Id);
 									}
 								}
 
 							} catch (e) {
-								console.error('Ошибка при парсинге и добавлении материала в БД', e);
+								console.error('Ошибка при парсинге материала', e);
 							}
 						}
-						console.log(`Загружено ${counter} материалов`);
-						percentUpdatedEl.innerHTML = '';
+						try {
+							if (bulkPut.length > 0) {
+								await db.infos.bulkPut(bulkPut/*, { allKeys: true }*/);
+							}
+
+							if (bulkDelete.length > 0)
+								await db.infos.bulkDelete(bulkDelete);
+						} catch (e) {
+							console.error('Ошибка при добавлении материалов в БД', e);
+                        }
+						//const endTime = new Date();
+						console.log(`Загружено всего ${counter} материалов`); // . Заняло: ${endTime - startTime}
+						console.log(`Загружено: ${numberNewData} новых материалов и ${numberChangeData} изменённых материалов`);
+						//percentUpdatedEl.innerHTML = '';
 
 						// кэшируем основные данные последнего Катрена и Послания
 						if (lastPoem) {
@@ -289,6 +325,7 @@ class DB {
 						let numberNewData = 0;
 						let jsonString = undefined;
 						const arrData = file.content.split('\n');
+						const bulkPut = [];
 						for (var i in arrData) {
 							try {
 								jsonString = arrData[i];
@@ -298,15 +335,23 @@ class DB {
 									// это только для отладки
 									// необходимо установить точку останова на const updated = await db.settings.update..., и после остановки в этой точке в консоли браузера выполнить: serviceDwld.LastNumberQuote = 99 , где 99 соответствует последнему номеру из quote.json
 									// && obj.Number < 100
-									if (!obj.Deleted && obj.Number > LastNumberQuoteStore) { // это новая цитата 
-										await db.quote.add(obj);
+									if (!obj.Deleted && obj.Number > LastNumberQuoteStore) { // это новая цитата
+										//await db.quote.add(obj);
+										bulkPut.push(obj);
 										if (serviceData !== undefined) console.log('Новая цитата из: ' + obj.Link);
 										numberNewData++;
 									}
 								}
 							} catch (e) {
-								console.error('Ошибка при парсинге и добавлении цитаты в БД', e);
+								console.error('Ошибка при парсинге цитаты', e);
 							}
+						}
+						try {
+							if (bulkPut.length > 0) {
+								await db.quote.bulkPut(bulkPut/*, { allKeys: true }*/);
+							}
+						} catch (e) {
+							console.error('Ошибка при добавлении цитат в БД', e);
 						}
 					}
 				}

@@ -19,9 +19,11 @@ class Router {
         let modelSearch;
 
         let isPrintTab;
+        let isPoems;
         const isTab = targetEl ? targetEl.target === '_blank' : false;
         const isSearchTab = targetEl && targetEl.dataset.msuPagesearch && (new Boolean(targetEl.dataset.msuPagesearch));
         const isCloseTab = targetEl && targetEl.dataset.msuClosetab && (new Boolean(targetEl.dataset.msuClosetab)); // клик по "Постоянная ссылка", чтобы закрыть оверлей
+        const isSeqNav = targetEl && targetEl.dataset.msuSeqnav && (new Boolean(targetEl.dataset.msuSeqnav));
 
         console.log('Переход к пути: ' + path);
 
@@ -76,6 +78,7 @@ class Router {
                     if (this.app.routes[k].Route.length === 0) routeAllPage = this.app.routes[k];
                 }
                 if (!route) route = routeAllPage;
+
 
                 if (path.startsWith('print/')) {
                     path = path.substring('print/'.length);
@@ -141,13 +144,15 @@ class Router {
                         }
                     }
 
+                    let infos;
+
                     posNext = path.indexOf('-next');
                     if (posNext !== -1) {
 
                         // Получение указанного материала для получения ссылки на следующий материал
                         path = path.substring(0, posNext);
 
-                        const infos = await db['infos']
+                        /*const*/ infos = await db['infos']
                             .where('Link')
                             .equalsIgnoreCase(path)
                             .toArray();
@@ -169,8 +174,8 @@ class Router {
                                     prePage = info.Link;
                                 });
 
+                            // т.к. нового материала нет, то обрабатываем полученные из БД infos, чтобы ниже заново не выполнять такой же запрсо к БД
                             const res = await this.app.views[`render${route.View}`](route, infos, path, hash, params, isTab, prePage, lastDict, lastPoem, modelSearch);
-                            //const res = await this.renderView(path, infos, cnt, prePage, lastDict, lastPoem, route);
                             cnt = res.cnt;
                             state.title = res.title;
                         }
@@ -191,7 +196,7 @@ class Router {
                         let routeBy = route.ByLink ? 'Link' : 'Catalog';
                         let routeVal = route.ByLink ? path : (route.Catalogs ? route.Catalogs[0] : undefined);
 
-                        let infos;
+                        //let infos;
                         if (routeVal) {
                             let coll = db['infos']
                                 .where(routeBy)
@@ -202,7 +207,7 @@ class Router {
                             else coll = coll.desc(); // сортировка по убыванию
                             /** отбираем материалы за год */
                             if (route.ParamView && route.ParamView.filter === 'year' && route.Catalogs) {
-                                const isPoems = route.Catalogs.includes(this.app.catalogs.poems) ? true : (route.Catalogs.some(el => [this.app.catalogs.dict, this.app.catalogs.tolk].includes(el)) ? false : undefined);
+                                isPoems = route.Catalogs.includes(this.app.catalogs.poems) ? true : (route.Catalogs.some(el => [this.app.catalogs.dict, this.app.catalogs.tolk].includes(el)) ? false : undefined);
                                 params.isPoems = isPoems;
                                 params.lastYear = strToDate((isPoems ? infoLastPoems.Date : infoLastDict.Date)).getFullYear();
                                 const yearFilter = isLastYear ? params.lastYear : params.year;
@@ -236,6 +241,7 @@ class Router {
                             state.title = res.title;
                             documentTitle = res.title;
 
+                            // выделяем активный элемент меню
                             if (res.cnt && !isTab) {
                                 const ulMenu = document.querySelector('ul.top-menu-ul');
                                 if (ulMenu) {
@@ -253,6 +259,10 @@ class Router {
                                 }
                             }
                         }
+                    }
+
+                    if (isPoems === undefined && infos && infos.length > 0) {
+                        isPoems = infos[0].Catalog === this.app.catalogs.poems;
                     }
                 }
             } catch (e) {
@@ -364,8 +374,16 @@ class Router {
 
         if (cntIsSet) {
             //console.log('Referer: ' + document.referrer);
+            //ym(counterYm, "userParams", { UserID: userID }); // это лучше делать при инициализации счётчика // этот ID фильтруется с пом. Характеристики - Параметры посетителей и он виден в карточке посетителя в левой колонке в самом низу в разделе "Параметры посетителя (устар.)"
             ym(counterYm, 'hit', path, { params: paramsYm }); // , referer: window.document.referrer
             tooltipstering(isPrintTab);
+
+            if (isSeqNav && isPoems !== undefined) {
+                if (isPoems) this.app.stateContainer.lastRead.Poem = path;
+                else this.app.stateContainer.lastRead.Tolk = path;
+
+                localStorage.setItem('olnvjs_lastRead', JSON.stringify(this.app.stateContainer.lastRead));
+            }
         }
 
         state.path = path;

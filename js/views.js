@@ -70,7 +70,11 @@ class Views {
 
         cnt = `<div class="razdel${info.Catalog === this.app.catalogs.poems ? ' poem-blok' : ''}">${desc}</div>`;
         if (info.Link === 'index') {
-            cnt += `<div class="cont"><a href="settings.html">Настройки</a></div>`;
+            cnt += `<div class="cont">
+            <a href="${this.app.stateContainer.lastRead.Tolk ? this.app.stateContainer.lastRead.Tolk : 'index'}.html" title="При последовательном чтении (переходе по ссылкам Предыдущая/Следующая)">Последнее прочитанное Послание</a><br />
+            <a href="${this.app.stateContainer.lastRead.Poem ? this.app.stateContainer.lastRead.Poem : 'index'}.html" title="При последовательном чтении (переходе по ссылкам Предыдущая/Следующая)">Последний прочитанный Катрен</a><br />
+            <a href="settings.html">Настройки</a>
+            </div>`;
         }
 
         // Галлерея
@@ -313,7 +317,7 @@ class Views {
         cnt += `<div class="page-navigate">`;
 
         if (!isTab && (prePage && ((info && this.app.catalogsIsNext.includes(info.Catalog)) || !info))) {
-            cnt += `<a href="${prefixPath}${prePage}${suffixPath}" class="blue-link-pagination">Предыдущая</a>
+            cnt += `<a href="${prefixPath}${prePage}${suffixPath}" data-msu-seqnav='true' class="blue-link-pagination">Предыдущая</a>
                 <img src="img/star.gif" height="15" hspace="10" width="15">`
         }
 
@@ -329,7 +333,7 @@ class Views {
             }
             if (linkNext) {
                 cnt += `<img src="img/star.gif" height="15" hspace="10" width="15">
-                    <a href="${prefixPath}${linkNext}${suffixPath}" class="blue-link-pagination">${info && info.Link === "Zapovedi" ? "Послание с Заповедями" : 'Следующая'}</a>`;
+                    <a href="${prefixPath}${linkNext}${suffixPath}" data-msu-seqnav='true' class="blue-link-pagination">${info && info.Link === "Zapovedi" ? "Послание с Заповедями" : 'Следующая'}</a>`;
                 if (info && !info.Data.Next) {
                     cnt += '<span id="label-next" title="Следующей страницы ещё может не быть"> [*]</span><span id="spinner-next" class="bi-spinner"></span>';
                 }

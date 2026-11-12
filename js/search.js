@@ -122,15 +122,15 @@ class Search {
                     coll = coll.filter((info) => (new RegExp(searchString, 'gim')).test(info[propSearch])); // нужно обязательно здесь делать new RegExp иначе неправильные результаты - https://github.com/dexie/Dexie.js/issues/1405?ysclid=muod2qrm235706232?ysclid=muod2qrm235706232
                     //coll = coll.filter((info) => info[propSearch]/*.toLowerCase()*/.indexOf(searchString) > -1); // RegExp работает быстрее
 
-                const startTime = new Date();
                 infos = coll; // await  .sortBy('Date')
-                const endTime = new Date();
-
-                console.log(`Поиск по фразе '${searchString}' окончен! Найдено ${infos.length} материалов. Заняло: ${endTime - startTime}`);
             }
 
 
+            const startTime = new Date();
             dataView = await this.prepareDataView(infos, advError, searchData);
+            const endTime = new Date();
+
+            console.log(`Поиск по фразе '${searchString}' окончен! Найдено ${infos.length} материалов. Заняло: ${endTime - startTime}`);
         }
         const res = await this.renderView(dataView, queryParams);
 
