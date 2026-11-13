@@ -382,7 +382,7 @@ class Router {
                 if (isPoems) this.app.stateContainer.lastRead.Poem = path;
                 else this.app.stateContainer.lastRead.Tolk = path;
 
-                localStorage.setItem('olnvjs_lastRead', JSON.stringify(this.app.stateContainer.lastRead));
+                localStorage.setItem('olnv_lastRead', JSON.stringify(this.app.stateContainer.lastRead));
             }
         }
 

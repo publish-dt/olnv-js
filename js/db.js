@@ -50,7 +50,7 @@ class DB {
 
 				lastUpdated = lastCheck;
 				this.app.stateContainer.updateInfo.lastUpdated = lastUpdated;
-				if (lastUpdated) localStorage.setItem('olnvjs_lastUpdated', JSON.stringify(lastUpdated));
+				if (lastUpdated) localStorage.setItem('olnv_lastUpdated', JSON.stringify(lastUpdated));
 			}
 		}
 		else {
@@ -71,8 +71,8 @@ class DB {
 
 		if (spinnerUpdatedEl) spinnerUpdatedEl.style.display = 'none';
 
-		if (lastCheck) localStorage.setItem('olnvjs_lastCheck', JSON.stringify(lastCheck));
-		if (isLastCheckGood !== undefined) localStorage.setItem('olnvjs_isLastCheckGood', JSON.stringify(isLastCheckGood));
+		if (lastCheck) localStorage.setItem('olnv_lastCheck', JSON.stringify(lastCheck));
+		if (isLastCheckGood !== undefined) localStorage.setItem('olnv_isLastCheckGood', JSON.stringify(isLastCheckGood));
 
 		this.app.stateContainer.updateInfo.updateStarted = false;
 
@@ -101,8 +101,8 @@ class DB {
 			try {
 				const files = await this.downloadAndUnzip(url + `/${nameZip}.zip`);
 				if (files !== undefined && files.length > 0) {
-					let lastTolk = this.app.stateContainer.lastTolk;// JSON.parse(localStorage.getItem('olnvjs_lastTolk'));
-					let lastPoem = this.app.stateContainer.lastPoem;// JSON.parse(localStorage.getItem('olnvjs_lastPoem'));
+					let lastTolk = this.app.stateContainer.lastTolk;// JSON.parse(localStorage.getItem('olnv_lastTolk'));
+					let lastPoem = this.app.stateContainer.lastPoem;// JSON.parse(localStorage.getItem('olnv_lastPoem'));
 					const lastTolkStore = lastTolk;
 					const lastPoemStore = lastPoem;
 
@@ -176,11 +176,9 @@ class DB {
 
 										// обновляем кэш данных последнего Катрена/Послания
 										if (obj.Catalog === app.catalogs.poems && (!lastPoem || obj.Date > lastPoem.Date || obj.Id === lastPoem.Id)) {
-											obj.Description = '';
 											lastPoem = obj;
 										}
 										else if (obj.Catalog === app.catalogs.tolk && (!lastTolk || obj.Date > lastTolk.Date || obj.Id === lastTolk.Id)) {
-											obj.Description = '';
 											lastTolk = obj;
 										}
 
@@ -213,12 +211,14 @@ class DB {
 
 						// кэшируем основные данные последнего Катрена и Послания
 						if (lastPoem) {
+							lastPoem.Description = '';
 							this.app.stateContainer.lastPoem = lastPoem;
-							localStorage.setItem('olnvjs_lastPoem', JSON.stringify(lastPoem));
+							localStorage.setItem('olnv_lastPoem', JSON.stringify(lastPoem));
 						}
 						if (lastTolk) {
+							lastTolk.Description = '';
 							this.app.stateContainer.lastTolk = lastTolk;
-							localStorage.setItem('olnvjs_lastTolk', JSON.stringify(lastTolk));
+							localStorage.setItem('olnv_lastTolk', JSON.stringify(lastTolk));
 						}
 
 						res.numberNewData = numberNewData;

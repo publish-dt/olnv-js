@@ -15,120 +15,125 @@ class Cld {
     }
 
     async getDataCalendar(year, month, isUpdate) {
-        //debugger
-        if (this.app.stateContainer.lastPoem && this.app.stateContainer.lastTolk) {
-            const lastPoemDate = strToDate(this.app.stateContainer.lastPoem.Date);
-            const lastTolkDate = strToDate(this.app.stateContainer.lastTolk.Date);
+
+        if (!this.app.stateContainer.lastPoem && !this.app.stateContainer.lastTolk) {
+            this.maxCldYear = (new Date()).getFullYear();
+            this.maxCldMonth = (new Date()).getMonth();
+        }
+        else {
+            const lastPoemDate = this.app.stateContainer.lastPoem ? strToDate(this.app.stateContainer.lastPoem.Date) : new Date(0, 0, 0);
+            const lastTolkDate = this.app.stateContainer.lastTolk ? strToDate(this.app.stateContainer.lastTolk.Date) : new Date(0, 0, 0);
             this.maxCldYear = lastPoemDate > lastTolkDate ? lastPoemDate.getFullYear() : lastTolkDate.getFullYear();
             this.maxCldMonth = lastPoemDate > lastTolkDate ? lastPoemDate.getMonth() : lastTolkDate.getMonth();
 
-            const selectYear = document.getElementById('cld-year');
-            for (var i = this.minCldYear; i <= this.maxCldYear; i++) {
-                const option = new Option(i, i);
-                selectYear.add(option);
-            }
-
-            if (!year || (!month && month !== 0)) {
-                const curDate = toMoscowDate();
-                month = this.maxCldMonth ? this.maxCldMonth : curDate.getMonth();
-                year = this.maxCldYear ? this.maxCldYear : curDate.getFullYear();
-            }
-            if (year < this.app.configApp.minYear || (!isUpdate && year === this.curCldYear && month === this.curCldMonth-1)) return;
-            const daysData = [];
-            const spinnerEl = document.getElementById('spinner-cld');
-            const cldTitleEl = document.getElementById('cld-title');
-
-            spinnerEl.style.display = 'inline-block';
-            cldTitleEl.innerHTML = '';
-            this.curCldMonth = month+1;
-            this.curCldYear = year;
-
-            try {
-                const dateStart = moment.tz([year, month, 1, 0, 0, 0], 'Europe/Moscow');
-                const dateEnd = dateStart.clone().add(1, 'month');
-                const dateFilter = `${year}-${pad(month + 1, 2)}-`
-
-                const infos = await db['infos']
-                    .where('Date')
-                    .startsWith(dateFilter)
-                    /*.where('Catalog')
-                    .anyOf([this.app.catalogs.dict, this.app.catalogs.tolk, this.app.catalogs.poems])
-                    .and((info) => {
-                        //const a = strToDate(info.Date) >= dateStart && strToDate(info.Date) < dateEnd;
-                        //const date = DateTime.fromISO(info.Date, { zone: 'Europe/Moscow' });
-                        const date = toMoscowDate(info.Date);
-                        const a = date >= dateStart && date < dateEnd;
-                        return a;
-                    })*/
-                    .sortBy('Date'); // надо обязательно сортировать по дате, чтобы Послания были в приоритете
-                    /*.equals(this.app.catalogs.poems)
-                    .orderBy('Date') // orderBy после фильтрации не может идти. filter может только после orderBy идти
-                    .each(async (info) => {
-                        infos.push(data);
-                    }).then(() => {
-                        cldTitleEl.innerHTML = `${months[month]} ${year} года`;
-                        //console.log("daysData:" + daysData.length);
-                        const newDate = new Date(year, month);
-                        CldEl.innerHTML = '';
-                        caleandar(CldEl, daysData, {}, newDate);
-                        spinnerEl.style.display = 'none';
-                    }).catch(err => {
-                        console.error(err);
-                    });*/
-
-                const inCatalogs = [this.app.catalogs.dict, this.app.catalogs.tolk, this.app.catalogs.poems];
-                /** Группируем по дате, т.к. может быть несколько разных типов материалов в одной дате (Послания, Катрены, спец. даты) */
-                const grouped = [];
-                for (var i in infos) {
-                    const info = infos[i];
-                    if (!inCatalogs.includes(info.Catalog)) continue;
-                    info.Description = undefined; // чтобы не переполнять память
-
-                    //const groupName = formatDateCld(toMoscowDateFromLocal(strToDate(info.Date)));
-                    /*const dt = DateTime.fromISO(info.Date, { zone: 'Europe/Moscow' });
-                    const groupName = dt.setLocale('ru').toFormat('yyyy/MM/dd');*/
-                    const groupName = toMoscowDate(info.Date).format('yyyy/MM/DD');
-
-                    if (!grouped[groupName]) {
-                        grouped[groupName] = [];
-                    }
-                    grouped[groupName].push(info);
-                }
-
-                for (var key in grouped) {
-                    const group = grouped[key];
-
-                    if (group && group.length > 0) {
-                        const infoMess = group.find(info => info.Catalog === this.app.catalogs.dict || info.Catalog === this.app.catalogs.tolk);
-                        const infoPoem = group.find(info => info.Catalog === this.app.catalogs.poems);
-                        const title = this.app.specDate[key];
-                        const data = {
-                            Date: key,
-                            Type: (group.some(info => info.Data && info.Data.PoemOutDict) ? 'poemOutDict' : (infoMess ? 'dict' : 'poemDay')) + (title ? ' title' : ''),
-                            Link: (infoMess ? infoMess.Link : (infoPoem ? infoPoem.Link : 'notLinkCld')) + '.html',
-                            Title: title ? title : null
-                        };
-                        daysData.push(data);
-                    }
-                }
-
-                for (var key in this.app.specDate) {
-                    const group = grouped[key];
-                    if (!group || (group && group.length === 0)) {
-                        daysData.push({ Date: key, Type: 'title', Link: null, Title: this.app.specDate[key] });
-                    }
-                }
-
-                cldTitleEl.innerHTML = `${months[month]} ${year} года`;
-                //console.log("daysData:" + daysData.length);
-                const newDate = new Date(year, month);
-                CldEl.innerHTML = '';
-                caleandar(CldEl, daysData, {}, newDate);
-            } catch (e) {
-                console.error(e);
-            }
-            spinnerEl.style.display = 'none';
         }
+
+        const selectYear = document.getElementById('cld-year');
+        for (var i = this.minCldYear; i <= this.maxCldYear; i++) {
+            const option = new Option(i, i);
+            selectYear.add(option);
+        }
+
+        if (!year || (!month && month !== 0)) {
+            const curDate = toMoscowDate();
+            month = this.maxCldMonth ? this.maxCldMonth : curDate.getMonth();
+            year = this.maxCldYear ? this.maxCldYear : curDate.getFullYear();
+        }
+        if (year < this.app.configApp.minYear || (!isUpdate && year === this.curCldYear && month === this.curCldMonth-1)) return;
+        const daysData = [];
+        const spinnerEl = document.getElementById('spinner-cld');
+        const cldTitleEl = document.getElementById('cld-title');
+
+        spinnerEl.style.display = 'inline-block';
+        cldTitleEl.innerHTML = '';
+        this.curCldMonth = month+1;
+        this.curCldYear = year;
+
+        try {
+            const dateStart = moment.tz([year, month, 1, 0, 0, 0], 'Europe/Moscow');
+            const dateEnd = dateStart.clone().add(1, 'month');
+            const dateFilter = `${year}-${pad(month + 1, 2)}-`
+
+            const infos = await db['infos']
+                .where('Date')
+                .startsWith(dateFilter)
+                /*.where('Catalog')
+                .anyOf([this.app.catalogs.dict, this.app.catalogs.tolk, this.app.catalogs.poems])
+                .and((info) => {
+                    //const a = strToDate(info.Date) >= dateStart && strToDate(info.Date) < dateEnd;
+                    //const date = DateTime.fromISO(info.Date, { zone: 'Europe/Moscow' });
+                    const date = toMoscowDate(info.Date);
+                    const a = date >= dateStart && date < dateEnd;
+                    return a;
+                })*/
+                .sortBy('Date'); // надо обязательно сортировать по дате, чтобы Послания были в приоритете
+                /*.equals(this.app.catalogs.poems)
+                .orderBy('Date') // orderBy после фильтрации не может идти. filter может только после orderBy идти
+                .each(async (info) => {
+                    infos.push(data);
+                }).then(() => {
+                    cldTitleEl.innerHTML = `${months[month]} ${year} года`;
+                    //console.log("daysData:" + daysData.length);
+                    const newDate = new Date(year, month);
+                    CldEl.innerHTML = '';
+                    caleandar(CldEl, daysData, {}, newDate);
+                    spinnerEl.style.display = 'none';
+                }).catch(err => {
+                    console.error(err);
+                });*/
+
+            const inCatalogs = [this.app.catalogs.dict, this.app.catalogs.tolk, this.app.catalogs.poems];
+            /** Группируем по дате, т.к. может быть несколько разных типов материалов в одной дате (Послания, Катрены, спец. даты) */
+            const grouped = [];
+            for (var i in infos) {
+                const info = infos[i];
+                if (!inCatalogs.includes(info.Catalog)) continue;
+                info.Description = undefined; // чтобы не переполнять память
+
+                //const groupName = formatDateCld(toMoscowDateFromLocal(strToDate(info.Date)));
+                /*const dt = DateTime.fromISO(info.Date, { zone: 'Europe/Moscow' });
+                const groupName = dt.setLocale('ru').toFormat('yyyy/MM/dd');*/
+                const groupName = toMoscowDate(info.Date).format('yyyy/MM/DD');
+
+                if (!grouped[groupName]) {
+                    grouped[groupName] = [];
+                }
+                grouped[groupName].push(info);
+            }
+
+            for (var key in grouped) {
+                const group = grouped[key];
+
+                if (group && group.length > 0) {
+                    const infoMess = group.find(info => info.Catalog === this.app.catalogs.dict || info.Catalog === this.app.catalogs.tolk);
+                    const infoPoem = group.find(info => info.Catalog === this.app.catalogs.poems);
+                    const title = this.app.specDate[key];
+                    const data = {
+                        Date: key,
+                        Type: (group.some(info => info.Data && info.Data.PoemOutDict) ? 'poemOutDict' : (infoMess ? 'dict' : 'poemDay')) + (title ? ' title' : ''),
+                        Link: (infoMess ? infoMess.Link : (infoPoem ? infoPoem.Link : 'notLinkCld')) + '.html',
+                        Title: title ? title : null
+                    };
+                    daysData.push(data);
+                }
+            }
+
+            for (var key in this.app.specDate) {
+                const group = grouped[key];
+                if (!group || (group && group.length === 0)) {
+                    daysData.push({ Date: key, Type: 'title', Link: null, Title: this.app.specDate[key] });
+                }
+            }
+
+            cldTitleEl.innerHTML = `${months[month]} ${year} года`;
+            //console.log("daysData:" + daysData.length);
+            const newDate = new Date(year, month);
+            CldEl.innerHTML = '';
+            caleandar(CldEl, daysData, {}, newDate);
+        } catch (e) {
+            console.error(e);
+        }
+        spinnerEl.style.display = 'none';
     }
 
     async onChangeCld(adjuster) {

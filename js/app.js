@@ -151,7 +151,7 @@ class App {
 
 
 			/** Читаем настройки приложения */
-			const urlUpdate = localStorage.getItem('olnvjs_urlUpdate');
+			const urlUpdate = localStorage.getItem('olnv_urlUpdate');
 			if (urlUpdate) {
 				this.urlUpdate = urlUpdate;
 				this.settings.urlUpdate = urlUpdate;
@@ -162,14 +162,14 @@ class App {
 				else this.urlUpdate = this.configApp.urlUpdate;
 			}
 
-			let isOffStarsBg = localStorage.getItem('olnvjs_isOffStarsBg');
+			let isOffStarsBg = localStorage.getItem('olnv_isOffStarsBg');
 			if (isOffStarsBg) {
 				isOffStarsBg = JSON.parse(isOffStarsBg);
 				this.settings.isOffStarsBg = isOffStarsBg;
 				OnOffStarsBg(isOffStarsBg);
             }
 
-			let isOnDebug = localStorage.getItem('olnvjs_isOnDebug');
+			let isOnDebug = localStorage.getItem('olnv_isOnDebug');
 			if (isOnDebug) {
 				isOnDebug = JSON.parse(isOnDebug);
 				window.isOnDebug = isOnDebug;
@@ -177,7 +177,7 @@ class App {
 				OnOffDebug(isOnDebug);
             }
 
-			let isNumByPrint = localStorage.getItem('olnvjs_isNumByPrint');
+			let isNumByPrint = localStorage.getItem('olnv_isNumByPrint');
 			if (isNumByPrint) {
 				isNumByPrint = JSON.parse(isNumByPrint);
 				window.isNumByPrint = isNumByPrint;
@@ -185,7 +185,7 @@ class App {
 				OnOffNumByPrint(isNumByPrint);
             }
 
-			let isAlert = localStorage.getItem('olnvjs_isAlert');
+			let isAlert = localStorage.getItem('olnv_isAlert');
 			if (isAlert) {
 				isAlert = JSON.parse(isAlert);
 				window.isAlert = isAlert;
@@ -194,18 +194,18 @@ class App {
             }
 
 
-			const lastRead = localStorage.getItem('olnvjs_lastRead');
+			const lastRead = localStorage.getItem('olnv_lastRead');
 			if (lastRead)
 				this.stateContainer.lastRead = JSON.parse(lastRead);
 
 			/** Заполняем блок Обновления */
-			const isLastCheckGood = JSON.parse(localStorage.getItem('olnvjs_isLastCheckGood'));
+			const isLastCheckGood = JSON.parse(localStorage.getItem('olnv_isLastCheckGood'));
 
-			let lastCheck = localStorage.getItem('olnvjs_lastCheck');
+			let lastCheck = localStorage.getItem('olnv_lastCheck');
 			if (lastCheck)
 				lastCheck = new Date(lastCheck.replace(/"/g, ''));
 
-			let lastUpdated = localStorage.getItem('olnvjs_lastUpdated');
+			let lastUpdated = localStorage.getItem('olnv_lastUpdated');
 			if (lastUpdated)
 				lastUpdated = new Date(lastUpdated.replace(/"/g, ''));
 
@@ -214,8 +214,8 @@ class App {
 			this.stateContainer.updateInfo.lastUpdated = lastUpdated;
 			this.buildBlockUpdate(isLastCheckGood, lastCheck, lastUpdated);
 
-			this.stateContainer.lastTolk = JSON.parse(localStorage.getItem('olnvjs_lastTolk'));
-			this.stateContainer.lastPoem = JSON.parse(localStorage.getItem('olnvjs_lastPoem'));
+			this.stateContainer.lastTolk = JSON.parse(localStorage.getItem('olnv_lastTolk'));
+			this.stateContainer.lastPoem = JSON.parse(localStorage.getItem('olnv_lastPoem'));
 
 
 			window.menuBlockEl = document.getElementById('menu-block');
@@ -293,9 +293,9 @@ class App {
 			db.delete({ disableAutoOpen: false });
 
 			//localStorage.clear();
-			// Удаляем все ключи, начинающиеся с 'olnvjs_'
+			// Удаляем все ключи, начинающиеся с 'olnv_'
 			for (let key of Object.keys(localStorage)) {
-				if (key.startsWith('olnvjs_')) {
+				if (key.startsWith('olnv_')) {
 					localStorage.removeItem(key);
 				}
 			}

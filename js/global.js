@@ -1,4 +1,4 @@
-window.verApp = '1.0.0-beta18';
+window.verApp = '1.0.0-beta19';
 window.netOffline = undefined;
 window.moveCounter = 0; // счётчик движения мыши на странице, если =0, то пользователь не активен на странице
 window.isActiveApp; // прриложение активно/видимо на экране
@@ -12,10 +12,10 @@ const paramsYm = {
     version: verApp, // версию приложения надо передавать, чтобы понимать, не работают ли пользователи с очень старой версией
 };
 
-let userID = localStorage.getItem('olnvjs_userID');
+let userID = localStorage.getItem('_olnv_userID');
 if (!userID) {
     userID = uuidv4();
-    localStorage.setItem('olnvjs_userID', userID);
+    localStorage.setItem('_olnv_userID', userID);
 }
 const userParamsYm = {
     UserID: userID // этот ID фильтруется с пом. Характеристики - Параметры посетителей и он виден в карточке посетителя в левой колонке в самом низу в разделе "Параметры посетителя (устар.)"
@@ -377,7 +377,7 @@ function setDomain(el) {
     window.app.settings.urlUpdate = el.value;
 }
 function setDomainInput(el) {
-    localStorage.setItem('olnvjs_urlUpdate', el.value);
+    localStorage.setItem('olnv_urlUpdate', el.value);
 }
 
 /** вкл/откл. звёздное небо */
@@ -389,26 +389,26 @@ function OnOffStarsBg(isOff) {
         document.body.style.cssText = 'background: #000 url("../img/stars.gif") repeat fixed 0% 0%';
     }
     window.app.settings.isOffStarsBg = isOff;
-    localStorage.setItem('olnvjs_isOffStarsBg', isOff);
+    localStorage.setItem('olnv_isOffStarsBg', isOff);
 }
 
 /** вкл/откл. режим отладки */
 function OnOffDebug(isOn) {
     window.isOnDebug = isOn;
     window.app.settings.isOnDebug = isOn;
-    localStorage.setItem('olnvjs_isOnDebug', isOn);
+    localStorage.setItem('olnv_isOnDebug', isOn);
 }
 /** вкл/откл. нумерацию стихов при печати */
 function OnOffNumByPrint(isOn) {
     window.isNumByPrint = isOn;
     window.app.settings.isNumByPrint = isOn;
-    localStorage.setItem('olnvjs_isNumByPrint', isOn);
+    localStorage.setItem('olnv_isNumByPrint', isOn);
 }
 /** вкл/откл. диалог оповещения пользователя */
 function OnOffAlert(isOn) {
     window.isAlert = isOn;
     window.app.settings.isAlert = isOn;
-    localStorage.setItem('olnvjs_isAlert', isOn);
+    localStorage.setItem('olnv_isAlert', isOn);
 }
 
 window.toggleMenuBtnEl = document.querySelector('.navbar-toggle');
