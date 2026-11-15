@@ -1,4 +1,4 @@
-const verApp = '1.0.0-beta20';
+const verApp = '1.0.0-beta21';
 const namespace = 'olnv';
 service = typeof service !== 'undefined' ? service : 'null';
 environment = typeof environment !== 'undefined' ? environment : 'Production';

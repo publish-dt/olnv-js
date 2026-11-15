@@ -475,4 +475,13 @@ function uuidv4() {
     });
 }
 
+function assign(target, source) {
+  for (var key in source) {
+    if (source.hasOwnProperty(key)) {
+      target[key] = source[key];
+    }
+  }
+  return target;
+}
+
 const months = ["январь", "февраль", "март", "апрель", "май", "июнь", "июль", "август", "сентябрь", "октябрь", "ноябрь", "декабрь"];

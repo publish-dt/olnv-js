@@ -321,20 +321,31 @@ class App {
             }
 
 			if (this.loggerApp && (error || isWarn || sendOTLP)) {
+				const attributesMain = {
+					userID: userID
+				};
+				const attributesErr = error && error !== true ? {
+					'exception.type': (!error || error === true) ? '' : (error.name || 'Error'),          // TypeError, FetchError, ...
+					'exception.message': (!error || error === true) ? '' : (error.message || ''),
+					'exception.stacktrace': (!error || error === true) ? '' : (error.stack || ''),       // полный стектрейс
+				} : {};
 				/*if (error && error !== true) {
 					attributes.exception.type = error.name || 'Error';
 					attributes.exception.message = error.message || '';
 					attributes.exception.stacktrace = error.stack || '';
                 }*/
+
+				const attributes = assign(attributesMain, attributesErr);
+
 				this.loggerApp.emit({
 					body: msg || error.message || String(error),
 					severityNumber: error && error !== true ? 17 : (isWarn ? 13 : 12), //SeverityNumber.INFO,
-					attributes: {
+					attributes: attributes/*{
 						'exception.type': (!error || error === true) ? '' : (error.name || 'Error'),          // TypeError, FetchError, ...
 						'exception.message': (!error || error === true) ? '' : (error.message || ''),
 						'exception.stacktrace': (!error || error === true) ? '' : (error.stack || ''),       // полный стектрейс
 						userID: userID
-					}
+					}*/
 				});
 			}
         }
