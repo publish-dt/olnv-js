@@ -149,6 +149,10 @@ class App {
 		try {
 			this.basePath = this.getPath(document.baseURI, true);
 
+			if (window.loggerProvider)
+				this.loggerApp = window.loggerProvider.getLogger('app');
+
+			this.logApp('Старт приложения', true);
 
 			/** Читаем настройки приложения */
 			const urlUpdate = localStorage.getItem('olnv_urlUpdate');
@@ -236,6 +240,7 @@ class App {
 
 			this.countdown.processJsonCountdown();
 
+			//throw new Error('Тест ошибки в телеметрии');
 
 			/** получаем последнюю открытую пользователем страницу */
 			let pathChanged = false;
@@ -251,7 +256,7 @@ class App {
 				await this.router.navigateToPath(path, true);
 
 		} catch (e) {
-			console.error(e);
+			this.logApp(null, e);
         }
 	}
 
@@ -303,6 +308,36 @@ class App {
 			caches.delete('cnt');
 			this.stateContainer = new StateContainer();
 		}
+	}
+
+	logApp(msg, error, isWarn) {
+		if (msg || error) {
+			if (this.settings.isOnDebug) {
+				if (error) console.error(msg, error);
+				else {
+					if (isWarn) console.warn(msg);
+					else console.log(msg);
+				}
+            }
+
+			if (this.loggerApp && (error || isWarn || sendOTLP)) {
+				/*if (error && error !== true) {
+					attributes.exception.type = error.name || 'Error';
+					attributes.exception.message = error.message || '';
+					attributes.exception.stacktrace = error.stack || '';
+                }*/
+				this.loggerApp.emit({
+					body: msg || error.message || String(error),
+					severityNumber: error && error !== true ? 17 : (isWarn ? 13 : 12), //SeverityNumber.INFO,
+					attributes: {
+						'exception.type': (!error || error === true) ? '' : (error.name || 'Error'),          // TypeError, FetchError, ...
+						'exception.message': (!error || error === true) ? '' : (error.message || ''),
+						'exception.stacktrace': (!error || error === true) ? '' : (error.stack || ''),       // полный стектрейс
+						userID: userID
+					}
+				});
+			}
+        }
 	}
 
 }
@@ -358,7 +393,7 @@ window.onclick = async function (event) {
 				try {
 					const state = await app.router.navigateToPath(path, false, targetEl, isUpdate);
 				} catch (e) {
-					console.error(e);
+					this.logApp(null, e);
 				}
             }
 		}
@@ -462,3 +497,4 @@ window.onChangeMonth = async function (month) {
 window.onChangeYear = async function (year) {
 	app.cld.onChangeYear(year);
 }
+

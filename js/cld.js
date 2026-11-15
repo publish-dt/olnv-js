@@ -131,7 +131,7 @@ class Cld {
             CldEl.innerHTML = '';
             caleandar(CldEl, daysData, {}, newDate);
         } catch (e) {
-            console.error(e);
+            this.app.logApp(null, e);
         }
         spinnerEl.style.display = 'none';
     }

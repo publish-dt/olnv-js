@@ -1,22 +1,14 @@
-window.verApp = '1.0.0-beta19';
 window.netOffline = undefined;
 window.moveCounter = 0; // счётчик движения мыши на странице, если =0, то пользователь не активен на странице
 window.isActiveApp; // прриложение активно/видимо на экране
 window.isOnDebug;
 moment.tz.add("Europe/Moscow|LMT MMT MMT MST MDST MSD MSK +05 EET EEST MSK|-2u.h -2u.h -2v.j -3v.j -4v.j -40 -30 -50 -20 -30 -40|01232434565756865656565656565656565698656565656565656565656565656565656565656a6|-3D8Ou.h 1sQM0 2pyW.W 1bA0 11X0 GN0 1Hb0 c4v.j ik0 3DA0 dz0 15A0 c10 2q10 iM10 23CL0 1db0 1cN0 1db0 1cN0 1db0 1dd0 1cO0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1fA0 1cM0 1cN0 IM0 rX0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1cM0 1fA0 1o00 11A0 1o00 11A0 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00 11A0 1o00 11A0 1qM0 WM0 1qM0 WM0 1qM0 WM0 1qM0 11A0 1o00 11A0 1o00 11A0 1qM0 WM0 8Hz0|16e6");
 
-const counterYm = 114149527;
-typeApp = typeof typeApp !== 'undefined' ? typeApp : 'null';
 const paramsYm = {
     "type-app": typeApp, // тип приложения: spa, wpf, ext - расширение браузера
-    version: verApp, // версию приложения надо передавать, чтобы понимать, не работают ли пользователи с очень старой версией
+    version: window.verApp, // версию приложения надо передавать, чтобы понимать, не работают ли пользователи с очень старой версией
 };
 
-let userID = localStorage.getItem('_olnv_userID');
-if (!userID) {
-    userID = uuidv4();
-    localStorage.setItem('_olnv_userID', userID);
-}
 const userParamsYm = {
     UserID: userID // этот ID фильтруется с пом. Характеристики - Параметры посетителей и он виден в карточке посетителя в левой колонке в самом низу в разделе "Параметры посетителя (устар.)"
 };

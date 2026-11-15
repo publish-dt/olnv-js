@@ -43,9 +43,11 @@ class DB {
 			isLastCheckGood = true;
 
 			if (Object.keys(res).length > 0) {
+				if (res.counter > 0)
+					isUpdated = true;
+
 				if (!noNavigate && (res.numberNewData > 0 || res.numberChangeData > 0)) {
 					if (this.app.settings.isAlert) alert(`Загружено: ${res.numberNewData} новых материалов и ${res.numberChangeData} изменённых материалов`);
-					isUpdated = true;
 				}
 
 				lastUpdated = lastCheck;
@@ -80,7 +82,7 @@ class DB {
 		if (!noNavigate && isUpdated)
 			this.app.router.navigateToPath(this.app.getPath(location.href), null, null, true); // это нужно, чтобы обновить текущий материал, т.к. в нём могли произойти изменения
 
-		console.log(`В базе: ${db ? await db.infos.count() : 0} материалов`);
+		this.app.logApp(`В базе: ${db ? await db.infos.count() : 0} материалов`);
 
 		return res;
 	}
@@ -159,9 +161,9 @@ class DB {
 											numberNewData++;
 										}*/
 
-										// эта проверка, почти в два раза (~1.6) увеличивает время загрузки
+										
 										if (serviceData && serviceData.LastDateChange) {
-											const isFound = await db.infos.where("Id").equalsIgnoreCase(obj.Id).first();
+											const isFound = await db.infos.where("Id").equalsIgnoreCase(obj.Id).first(); // эта проверка, почти в два раза (~1.6) увеличивает время загрузки
 											if (isFound) { // это изменённый материал
 												if (lastPoemStore && obj.Id !== lastPoemStore.Id && lastTolkStore && obj.Id !== lastTolkStore.Id) { // Последний Катрен/Послание не должен учитываться в списке изменённых материалов, т.к. в нём меняется только Data.Next
 													console.log(`Изменённый материал: ${obj.Link}`);
@@ -181,17 +183,17 @@ class DB {
 										else if (obj.Catalog === app.catalogs.tolk && (!lastTolk || obj.Date > lastTolk.Date || obj.Id === lastTolk.Id)) {
 											lastTolk = obj;
 										}
-
-										counter++;
 									}
 									else if (serviceData && serviceData.LastDateChange && obj.Active === false && dateChange > lastDateChangeStore) {
 										bulkDelete.push(obj.Id);
 										//await db.infos.delete(obj.Id);
 									}
+
+									counter++;
 								}
 
 							} catch (e) {
-								console.error('Ошибка при парсинге материала', e);
+								this.app.logApp('Ошибка при парсинге материала', e);
 							}
 						}
 						try {
@@ -202,10 +204,10 @@ class DB {
 							if (bulkDelete.length > 0)
 								await db.infos.bulkDelete(bulkDelete);
 						} catch (e) {
-							console.error('Ошибка при добавлении материалов в БД', e);
+							this.app.logApp('Ошибка при добавлении материалов в БД', e);
                         }
 						//const endTime = new Date();
-						console.log(`Загружено всего ${counter} материалов`); // . Заняло: ${endTime - startTime}
+						//console.log(`Обработано всего ${counter} материалов`); // . Заняло: ${endTime - startTime}
 						console.log(`Загружено: ${numberNewData} новых материалов и ${numberChangeData} изменённых материалов`);
 						//percentUpdatedEl.innerHTML = '';
 
@@ -223,6 +225,7 @@ class DB {
 
 						res.numberNewData = numberNewData;
 						res.numberChangeData = numberChangeData;
+						res.counter = counter;
 					}
 				}
 
@@ -235,7 +238,7 @@ class DB {
 					await db.settings.add(objServ);
 				}
 			} catch (e) {
-				console.error(e);
+				this.app.logApp(null, e);
 			}
 		}
 		else if (serviceData !== undefined && lastDateChange < lastDateChangeStore) {
@@ -343,7 +346,7 @@ class DB {
 									}
 								}
 							} catch (e) {
-								console.error('Ошибка при парсинге цитаты', e);
+								this.app.logApp('Ошибка при парсинге цитаты', e);
 							}
 						}
 						try {
@@ -351,7 +354,7 @@ class DB {
 								await db.quote.bulkPut(bulkPut/*, { allKeys: true }*/);
 							}
 						} catch (e) {
-							console.error('Ошибка при добавлении цитат в БД', e);
+							this.app.logApp('Ошибка при добавлении цитат в БД', e);
 						}
 					}
 				}
@@ -365,7 +368,7 @@ class DB {
 					await db.settings.add(objServ);
 				}
 			} catch (e) {
-				console.error(e);
+				this.app.logApp(null, e);
 			}
 		}
 	}
@@ -409,7 +412,9 @@ class DB {
 		} catch (error) {
 			if (error.message === 'Failed to fetch')
 				console.log(`Ресурс ${url} недоступен:`, error.message);
-			else console.error(`Ошибка при скачивании ${url}:`, error);
+			else {
+				this.app.logApp(`Ошибка при скачивании ${url}:`, e);
+			}
 		}
 	}
 }

@@ -25,7 +25,7 @@ class Countdown {
 
 	/** Обратный отсчёт до Посыла */
 	async countdown() {
-		this.isDebugTimeleft = app.settings.isOnDebug; // вкл./выкл. отладчик обратного отсчёта
+		//this.isDebugTimeleft = app.settings.isOnDebug; // вкл./выкл. отладчик обратного отсчёта
 		this.countStartPosyl += this.period / 1000;
 
 		let today = 0;
@@ -233,7 +233,7 @@ class Countdown {
 			const res = await download('https://timeapi.io/api/Time/current/zone?timeZone=' + timeZoneName);
 			const date = new Date(res.dateTime);
 			const localTime = new Date();
-			console.log('Разница между локальным и серверным временем = ' + (localTime - date));
+			app.logApp('Разница между локальным и серверным временем = ' + (localTime - date));
 			return date;
 		} catch (e) {
 			return new Date();

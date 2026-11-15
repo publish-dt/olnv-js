@@ -25,7 +25,7 @@ class Router {
         const isCloseTab = targetEl && targetEl.dataset.msuClosetab && (new Boolean(targetEl.dataset.msuClosetab)); // клик по "Постоянная ссылка", чтобы закрыть оверлей
         const isSeqNav = targetEl && targetEl.dataset.msuSeqnav && (new Boolean(targetEl.dataset.msuSeqnav));
 
-        console.log('Переход к пути: ' + path);
+        this.app.logApp('Переход к пути: ' + path);
 
         if (path !== '') {
             let prePage = '';
@@ -266,7 +266,7 @@ class Router {
                     }
                 }
             } catch (e) {
-                console.error(e);
+                this.app.logApp(null, e);
             }
         }
 
@@ -274,7 +274,7 @@ class Router {
         try {
             settings = await db.settings.get('serviceData'); //undefined;
         } catch (e) {
-            console.error(e);
+            this.app.logApp(null, e);
         }
         let cntIsSet = false;
         if (cnt === '') {
