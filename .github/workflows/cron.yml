@@ -1,0 +1,19 @@
+name: Пинг для просыпания Aspire
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:   # кнопка Run workflow для ручного запуска/теста
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Wake up dashboard
+        run: |
+          code=$(curl -s -o /dev/null -w "%{http_code}" https://aspire-dashboard.onrender.com/login)
+          echo "HTTP status: $code"
+          if [ "$code" != "200" ]; then
+            echo "::warning::Дашборд ответил кодом $code"
+          fi
