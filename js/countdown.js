@@ -233,7 +233,7 @@ class Countdown {
 			const res = await download('https://timeapi.io/api/Time/current/zone?timeZone=' + timeZoneName);
 			const date = new Date(res.dateTime);
 			const localTime = new Date();
-			app.logApp('Разница между локальным и серверным временем = ' + (localTime - date));
+			if (this.isDebugTimeleft) console.log('Разница между локальным и серверным временем = ' + (localTime - date));
 			return date;
 		} catch (e) {
 			return new Date();

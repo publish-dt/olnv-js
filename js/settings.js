@@ -1,6 +1,6 @@
-const verApp = '1.0.0-beta23';
+const verApp = '1.0.0-beta24';
 const namespace = 'olnv';
-service = typeof service !== 'undefined' ? service : 'null';
+service = typeof service !== 'undefined' ? namespace+'.'+service : 'null';
 environment = typeof environment !== 'undefined' ? environment : 'Production';
 const typeApp = `${service}${typeof environment !== 'undefined' ? ('.' + environment) : ''}`;
 let userID = localStorage.getItem('_olnv_userID');

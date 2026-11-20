@@ -16,7 +16,7 @@ window.loggerProvider = new LoggerProvider({
         'project.name': namespace,
         'service.namespace': namespace,
         'service.name': service, //typeApp,
-        'service_name': `${namespace}.${typeApp}`,
+        'service_name': `${typeApp}`,
         'service.instance.id': environment, //userID,
         'service.version': verApp,
         'deployment.environment': environment,
@@ -25,7 +25,7 @@ window.loggerProvider = new LoggerProvider({
 });
 const logger = loggerProvider.getLogger('otlp.js');
 logger.emit({
-    body: 'Запуск телеметрии',
+    body: 'Запуск телеметрии otlp',
     severityNumber: 12,//SeverityNumber.INFO,
     attributes: {
         userID: userID,

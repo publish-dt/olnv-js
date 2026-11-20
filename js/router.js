@@ -374,8 +374,9 @@ class Router {
 
         if (cntIsSet) {
             //console.log('Referer: ' + document.referrer);
-            //ym(counterYm, "userParams", { UserID: userID }); // это лучше делать при инициализации счётчика // этот ID фильтруется с пом. Характеристики - Параметры посетителей и он виден в карточке посетителя в левой колонке в самом низу в разделе "Параметры посетителя (устар.)"
-            ym(counterYm, 'hit', path, { params: paramsYm }); // , referer: window.document.referrer
+            ym(counterYm, "setUserID", userID); // этот ID фильтруется с пом. Характеристики - UserID посетителя и он склеивает ClientID с UserID
+            ym(counterYm, "userParams", { UserID: userID }); // это лучше делать при инициализации счётчика // этот ID фильтруется с пом. Характеристики - Параметры посетителей и он виден в карточке посетителя в левой колонке в самом низу в разделе "Параметры посетителя (устар.)"
+            ym(counterYm, 'hit', path+'.html', { params: paramsYm }); // , referer: window.document.referrer
             tooltipstering(isPrintTab);
 
             if (isSeqNav && isPoems !== undefined) {

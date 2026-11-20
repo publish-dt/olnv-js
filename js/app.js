@@ -152,6 +152,9 @@ class App {
 			if (window.loggerProvider)
 				this.loggerApp = window.loggerProvider.getLogger('app');
 
+			if (window.faroApi)
+				this.loggerAppFaro = window.faroApi;
+
 			this.logApp('Старт приложения', true);
 
 			/** Читаем настройки приложения */
@@ -320,7 +323,7 @@ class App {
 				}
             }
 
-			if (this.loggerApp && (error || isWarn || sendOTLP)) {
+			if ((this.loggerApp || this.loggerAppFaro) && (error || isWarn || sendOTLP)) {
 				const attributesMain = {
 					userID: userID
 				};
@@ -329,24 +332,21 @@ class App {
 					'exception.message': (!error || error === true) ? '' : (error.message || ''),
 					'exception.stacktrace': (!error || error === true) ? '' : (error.stack || ''),       // полный стектрейс
 				} : {};
-				/*if (error && error !== true) {
-					attributes.exception.type = error.name || 'Error';
-					attributes.exception.message = error.message || '';
-					attributes.exception.stacktrace = error.stack || '';
-                }*/
 
 				const attributes = assign(attributesMain, attributesErr);
 
-				this.loggerApp.emit({
-					body: msg || error.message || String(error),
-					severityNumber: error && error !== true ? 17 : (isWarn ? 13 : 12), //SeverityNumber.INFO,
-					attributes: attributes/*{
-						'exception.type': (!error || error === true) ? '' : (error.name || 'Error'),          // TypeError, FetchError, ...
-						'exception.message': (!error || error === true) ? '' : (error.message || ''),
-						'exception.stacktrace': (!error || error === true) ? '' : (error.stack || ''),       // полный стектрейс
-						userID: userID
-					}*/
-				});
+				if (this.loggerApp)
+					this.loggerApp.emit({
+						body: msg || error.message || String(error),
+						severityNumber: error && error !== true ? 17 : (isWarn ? 13 : 12), //SeverityNumber.INFO,
+						attributes: attributes
+					});
+
+				if (this.loggerAppFaro)
+					this.loggerAppFaro.pushLog([msg || error.message || String(error)], {
+						level: error && error !== true ? 'error' : (isWarn ? 'warn' : 'info'), //LogLevel.INFO,
+						context: attributes,
+					});
 			}
         }
 	}

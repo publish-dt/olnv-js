@@ -19,7 +19,7 @@
     <script src="config.js" type="text/javascript"></script><!---->
     <script src="js/settings.js" type="text/javascript"></script>
     <script src="js/otlp.js" type="module"></script><!---->
-    <script src="js/otlp-faro.js" type="text/javascript"></script>
+    <script src="js/otlp-faro.js" type="module"></script>
 
     <title>Откровения людям Нового века</title>
 
@@ -213,8 +213,8 @@
             for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
             k = e.createElement(t), a = e.getElementsByTagName(t)[0], k.async = 1, k.src = r, a.parentNode.insertBefore(k,a)
         })(window, document, 'script', 'https://mc.yandex.ru/metrika/tag.js?id=' + counterYm, 'ym');
-        ym(counterYm, "setUserID", window.userID); // этот ID фильтруется с пом. Характеристики - UserID посетителя и он склеивает ClientID с UserID
         ym(counterYm, 'init', { ssr: true, defer: true, params: paramsYm, userParams: userParamsYm, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+        //ym(counterYm, "setUserID", window.userID); // этот ID фильтруется с пом. Характеристики - UserID посетителя и он склеивает ClientID с UserID
     </script>
     <!-- /Yandex.Metrika counter -->
 
